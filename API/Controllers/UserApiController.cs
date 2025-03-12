@@ -103,6 +103,7 @@ namespace API.Controllers
             {
                 model.Image = await _fileHelper.UploadFile(_profileImagePath, model.ImageFile, model.Image);
             }
+            
             var result = await _user.Add(model);
             if (result == -1)
                 return BadRequest(new { message = "Email already exists" });
