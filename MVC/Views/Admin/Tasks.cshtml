@@ -1,0 +1,99 @@
+@{
+    ViewData["Title"] = "Tasks";
+}
+
+<div class="mb-2">
+    <div id="alert" role="alert"></div>
+</div>
+
+<div class="container mt-4">
+    <table class="table table-striped" id="taskTable">
+        <thead class="thead-dark">
+            <tr class="row">
+                <th class="col-1 text-center">Edit</th>
+                <th class="col-2 text-center">Title</th>
+                <th class="col-4 text-center">Description</th>
+                <th class="col-1 text-center">Estimated Days</th>
+                <th class="col-1 text-center">Start Date</th>
+                <th class="col-1 text-center">End Date</th>
+                <th class="col-1 text-center">Status</th>
+                <th class="col-1 text-center">Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- This will be filled dynamically -->
+        </tbody>
+    </table>
+
+    <div class="mt-5">
+        <button id="btnAdd" class="btn btn-info">Add Task</button>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const baseUrl = "http://localhost:5267/api/task";
+
+        // ========
+
+        function loadTaskData() {
+            $.ajax({
+                url: baseUrl,
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    $('#taskTable tbody').empty();
+
+                    $.each(data, function (index, task) {
+                        $('#taskTable tbody').append(`
+                            <tr class="row">
+                                <td class="col-1 text-center">
+                                    <button id="btnEdit" data-id="${task.taskId}" class="btn btn-sm btn-warning">
+                                        Edit
+                                    </button>
+                                </td>
+                                <td class="col-2 text-center">${task.title}</td>
+                                <td class="col-4 text-center">${task.description}</td>
+                                <td class="col-1 text-center">${task.estimatedDays}</td>
+                                <td class="col-1 text-center">${task.startDate}</td>
+                                <td class="col-1 text-center">${task.endDate}</td>
+                                <td class="col-1 text-center">${task.status}</td>
+                                <td class="col-1 text-center">
+                                    <button id="btnDelete" data-id="${task.taskId}" class="btn btn-sm btn-danger">
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        `);
+                    )};
+                },
+                error: function (error) {
+                    console.error('Error loading task data:', error);
+                }
+            });
+        }
+
+        // ========
+
+        $(document).ready(function () {
+            loadTaskData();
+             // ========
+
+            $('#btnAdd').on('click', function() {
+
+            });
+
+             // ========
+
+            $('#btnEdit').on('click', function() {
+
+            });
+
+             // ========
+
+            $('#btnDelete').on('click', function() {
+
+            });
+        });
+    </script>
+}

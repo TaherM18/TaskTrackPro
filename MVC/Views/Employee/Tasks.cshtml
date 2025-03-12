@@ -1,0 +1,55 @@
+@{
+    ViewData["Title"] = "Tasks";
+}
+@model List<Repositories.Models.Task>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-primary" role="alert">
+        @TempData["Message"]
+    </div>
+}
+
+<div class="container mt-4">
+    <table class="table table-striped" id="task-table">
+        <thead class="thead-dark">
+            <tr class="row">
+                <th class="col-1 text-center">Edit</th>
+                <th class="col-2 text-center">Title</th>
+                <th class="col-4 text-center">Description</th>
+                <th class="col-1 text-center">Estimated Days</th>
+                <th class="col-1 text-center">Start Date</th>
+                <th class="col-1 text-center">End Date</th>
+                <th class="col-1 text-center">Status</th>
+                <th class="col-1 text-center">Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var task in Model)
+            {
+                <tr class="row">
+                    <td class="col-1 text-center">
+                        <a href="@Url.Action("Create", "Task", new { id = task.TaskId })" class="btn btn-sm btn-warning">
+                            Edit
+                        </a>
+                    </td>
+                    <td class="col-2 text-center">@task.Title</td>
+                    <td class="col-4 text-center">@task.Description</td>
+                    <td class="col-1 text-center">@task.EstimatedDays</td>
+                    <td class="col-1 text-center">@task.StartDate.ToShortDateString()</td>
+                    <td class="col-1 text-center">@task.EndDate.ToShortDateString()</td>
+                    <td class="col-1 text-center">@task.Status</td>
+                    <td class="col-1 text-center">
+                        <a href="@Url.Action("Delete", "Task", new { id = task.TaskId })" class="btn btn-sm btn-danger">
+                            Delete
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="mt-5">
+        <a href="@Url.Action("Create", "Task")" class="btn btn-info">Add Task</a>
+    </div>
+</div>

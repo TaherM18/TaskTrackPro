@@ -1,0 +1,56 @@
+@model Repositories.Models.ChangePasswordVM
+@{
+    ViewData["Title"] = "Change Password";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4">
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-primary alert-dismissible fade show" role="alert">
+            @TempData["Message"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    <div class="row">
+        <div class="col-md-4 m-auto">
+
+            <div class="card">
+                <div class="card-header">Change Password</div>
+                <div class="card-body">
+                    <form asp-action="ChangePass" method="post">
+                        <input type="hidden" asp-for="UserId" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Old Password</label>
+                            <input class="form-control" asp-for="OldPassword" type="password" required />
+                            <span asp-validation-for="OldPassword" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">New Password</label>
+                            <input class="form-control" asp-for="NewPassword" type="password" required />
+                            <span asp-validation-for="NewPassword" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Confirm New Password</label>
+                            <input class="form-control" asp-for="ConfirmPassword" type="password" required />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-warning">Change Password</button>
+                    </form>
+                </div>
+            </div>
+            <div class="mt-4">
+                <a class="btn btn-primary" href="@Url.Action("Profile", "Employee")">Back to Profile</a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
