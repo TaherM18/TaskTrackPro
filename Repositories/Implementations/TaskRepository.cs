@@ -25,7 +25,7 @@ namespace Repositories.Implementations
             {
                 using (NpgsqlCommand cmd = new NpgsqlCommand(query, _con))
                 {
-                    cmd.Parameters.AddWithValue("@c_userid", model.UserId);
+                    cmd.Parameters.AddWithValue("@c_userid", NpgsqlDbType.Uuid, model.UserId);
                     cmd.Parameters.AddWithValue("@c_title", model.Title);
                     cmd.Parameters.AddWithValue("@c_description", (object?)model.Description ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@c_estimated_days", (object?)model.EstimatedDays ?? DBNull.Value);
@@ -121,7 +121,7 @@ namespace Repositories.Implementations
                                     Email = reader.GetString("c_email"),
                                     Address = reader.IsDBNull("c_address") ? null : reader.GetString("c_address"),
                                     Contact = reader.IsDBNull("c_contact") ? null : reader.GetString("c_contact"),
-                                    Gender = reader.IsDBNull("c_gender") ? null : reader.GetString("c_gender")[0],
+                                    Gender = reader.IsDBNull("c_gender") ? null : reader.GetChar("c_gender"),
                                     Image = reader.IsDBNull("c_image") ? null : reader.GetString("c_image"),
                                     CreatedAt = reader.GetDateTime("user_created_at"),
                                     UpdatedAt = reader.GetDateTime("user_updated_at")
@@ -191,7 +191,7 @@ namespace Repositories.Implementations
                                     Email = reader.GetString("c_email"),
                                     Address = reader.IsDBNull("c_address") ? null : reader.GetString("c_address"),
                                     Contact = reader.IsDBNull("c_contact") ? null : reader.GetString("c_contact"),
-                                    Gender = reader.IsDBNull("c_gender") ? null : reader.GetString("c_gender")[0],
+                                    Gender = reader.IsDBNull("c_gender") ? null : reader.GetChar("c_gender"),
                                     Image = reader.IsDBNull("c_image") ? null : reader.GetString("c_image"),
                                     CreatedAt = reader.GetDateTime("user_created_at"),
                                     UpdatedAt = reader.GetDateTime("user_updated_at")
@@ -260,7 +260,7 @@ namespace Repositories.Implementations
                                     Email = reader.GetString("c_email"),
                                     Address = reader.IsDBNull("c_address") ? null : reader.GetString("c_address"),
                                     Contact = reader.IsDBNull("c_contact") ? null : reader.GetString("c_contact"),
-                                    Gender = reader.IsDBNull("c_gender") ? null : reader.GetString("c_gender")[0],
+                                    Gender = reader.IsDBNull("c_gender") ? null : reader.GetChar("c_gender"),
                                     Image = reader.IsDBNull("c_image") ? null : reader.GetString("c_image"),
                                     CreatedAt = reader.GetDateTime("user_created_at"),
                                     UpdatedAt = reader.GetDateTime("user_updated_at")
