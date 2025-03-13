@@ -8,16 +8,28 @@ function checkIdentityAndAccess() {
     switch (controller) {
         case "admin":
             if (user == null || user.role != "A") {
-                alert("You are not authorized to view this page");
-                // window.location.assign("/Auth/Login");
-                window.history.back();
+                Swal.fire({
+                    title: "Unauthorized access",
+                    text: "Going back...",
+                    icon: "error",
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.assign("/Auth/Login");
+                });
             }
             break;
         case "employee":
             if (user == null || user.role != "E") {
-                alert("You are not authorized to view this page");
-                // window.location.assign("/Auth/Login");
-                window.history.back();
+                Swal.fire({
+                    title: "Unauthorized access",
+                    text: "Going back...",
+                    icon: "error",
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.assign("/Auth/Login");
+                });
             }
             break;
         default:
