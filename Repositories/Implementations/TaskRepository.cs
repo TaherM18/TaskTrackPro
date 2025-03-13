@@ -25,7 +25,7 @@ namespace Repositories.Implementations
             {
                 using (NpgsqlCommand cmd = new NpgsqlCommand(query, _con))
                 {
-                    cmd.Parameters.AddWithValue("@c_userid", model.UserId);
+                    cmd.Parameters.AddWithValue("@c_userid", NpgsqlDbType.Uuid, model.UserId);
                     cmd.Parameters.AddWithValue("@c_title", model.Title);
                     cmd.Parameters.AddWithValue("@c_description", (object?)model.Description ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@c_estimated_days", (object?)model.EstimatedDays ?? DBNull.Value);
