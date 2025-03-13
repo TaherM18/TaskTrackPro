@@ -1,48 +1,102 @@
 @{
     ViewData["Title"] = "Login";
+    Layout = "~/Views/Shared/_HomeLayout.cshtml";
 }
 @model Repositories.Models.LoginVM
 
-<div class="contain">
-    @if (TempData["Message"] != null)
-    {
-        <div class="alert alert-primary alert-dismissible fade show" role="alert">
-            @TempData["Message"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-    <h2>Login</h2>
-    <div class="row">
-        <div class="col-md-4 m-auto">
-            <div class="card">
-                <div class="card-body">
-                    <form method="post" asp-action="Login" asp-controller="Employee" enctype="multipart/form-data">
-                        <div class="form-group mt-3">
-                            <label class="mb-2" for="Email">Email:</label>
-                            <input type="text" class="form-control" id="Email" asp-for="Email"
-                                placeholder="Enter Email" />
-                                <span class="text-danger" asp-validation-for="Email"></span>
-                        </div>
-                        <div class="form-group mt-3">
-                            <label class="mb-2" for="Password">Password:</label>
-                            <input type="password" class="form-control" id="Password" asp-for="Password"
-                                placeholder="Enter Password" />
-                                <span class="text-danger" asp-validation-for="Password"></span>
-                        </div>
-                        <button type="submit" class="btn btn-primary mt-4">Login</button>
-                    </form>
-                    <div class="mt-2">
-                        <span class="text-danger" asp-validation-summary="All"></span>
+<div class="mb-2">
+    <div id="responseMessage" class="alert-dismissible fade show" role="alert"></div>
+</div>
+
+<h2>Login</h2>
+<div class="row">
+    <div class="col-md-4 m-auto">
+        <div class="card">
+            <div class="card-body">
+                <form id="loginForm">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text"><i class="fa fa-user"></i></span>
+                        <input type="email" id="email" name="Email" class="form-control" placeholder="Email">
                     </div>
-                </div>
+                    <div class="input-group mb-4">
+                        <span class="input-group-text"><i class="fa fa-lock"></i></span>
+                        <input type="password" id="pwd" name="Password" class="form-control" placeholder="Password">
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <button id="btnLogin" type="submit" class="btn btn-primary px-4">Login</button>
+                        </div>
+                        <div class="col-6 text-right">
+                            <button type="button" class="btn btn-link px-0">Forgot password?</button>
+                        </div>
+                    </div>
+                </form>
             </div>
-            <div class="mt-5">
-                <p>New to TMS?</p>
-                <a class="btn btn-info btn-sm" href="@Url.Action("Create", "Employee")">Register Here</a>
-            </div>
+        </div>
+        <div class="mt-5">
+            <p>New to TaskTrackerPro?</p>
+            <a class="btn btn-info btn-sm" href="@Url.Action("Register", "Employee")">Register Here</a>
         </div>
     </div>
 </div>
+
 @section Scripts {
-    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+   <script>
+        // 🔹 Get Login Form Data
+        function getFormData() {
+            const formData = new FormData();
+            formData.append("Email", $('#email').val());
+            formData.append("Password", $('#pwd').val());
+            return formData;
+        }
+
+        // 🔹 Handle Login Process
+        function handleLogin() {
+            const formData = getFormData();
+
+            $.ajax({
+                url: 'http://localhost:5267/api/user/auth',
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function (response) {
+                    console.log(response);
+                    
+                    $('#responseMessage').removeClass().addClass("alert alert-success");
+                    $('#responseMessage').text(response.message + " Redirecting...");
+                    localStorage.setItem("token", response.token);
+                    sessionStorage.setItem("user", JSON.stringify(response.data));
+
+                    switch (response.data.role) {
+                        case "A":
+                            setTimeout(() => window.location.assign("/Admin/Index"), 2000);
+                            break;
+                        case "E":
+                            setTimeout(() => window.location.assign("/Employee/Index"), 2000);
+                            break;
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.log("xhr:", xhr);
+                    console.log("status:",status);
+                    console.log("error:",error);
+                    let jsonResponse = xhr.responseJSON
+                    console.log(jsonResponse);
+                    $('#responseMessage').removeClass().addClass("alert alert-danger");
+                    $('#responseMessage').html(jsonResponse.message);
+                }
+            });
+        }
+
+        //
+
+        $(document).ready(function () {
+
+            $('#loginForm').submit(function (event) {
+                event.preventDefault();
+                handleLogin();
+            });
+        });
+    </script>
 }

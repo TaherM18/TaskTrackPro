@@ -4,33 +4,49 @@
 // Write your JavaScript code.
 function checkIdentityAndAccess() {
     let user = JSON.parse(sessionStorage.getItem("user"));
-    if (user == null) {
-        // not authenticated user
-        window.location.assign("/Auth/Login");
+    let controller = window.location.href.split("/")[3].toLowerCase();
+    switch (controller) {
+        case "admin":
+            if (user == null || user.role != "A") {
+                alert("You are not authorized to view this page");
+                window.location.assign("/Auth/Login");
+            }
+            break;
+        case "employee":
+            if (user == null || user.role != "E") {
+                alert("You are not authorized to view this page");
+                window.location.assign("/Auth/Login");
+            }
+            break;
+        default:
+            // code block
+            console.log("Authentication not required");
     }
-    else {
-        // authenticated user
-        // check role
-        let controller = window.location.href.split("/")[3].toLowerCase();
-        switch(controller) {
-            case "admin":
-                if (user.role != "A") {
-                    alert("You are not authorized to view this page");
-                    window.location.assign("/Auth/Login");
-                }
-                break;
-            case "employee":
-                if (user.role != "E") {
-                    alert("You are not authorized to view this page");
-                    window.location.assign("/Auth/Login");
-                }
-                break;
-            default:
-                // code block
-                console.log("Authentication not required");
-        }
+}
+
+//
+
+function setProfileDiv() {
+    let user = sessionStorage.getItem("user");
+    if (user != null) {
+        // user is logged in
+        htmlContent = `<div class="btn-group">
+        <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <img height="40px" width="auto" src="/profile_images/${user.image}" onerror="this.src='/profile_images/placeholder.jpg'">
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="Profile">Profile</a></li>
+            <li><a class="dropdown-item" href="/Auth/Logout">Logout</a></li>
+        </ul>
+    </div>`;
+    } else {
+        // visitor
+        htmlContent = `<a class="btn btn-light" href="/Auth/Login">Sign In</a>`;
     }
+    $("#profileMenu").html(htmlContent);
 }
 
 // Important
 checkIdentityAndAccess();
+//
+setProfileDiv();

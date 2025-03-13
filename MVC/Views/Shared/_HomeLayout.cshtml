@@ -30,43 +30,10 @@
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home"
                                 asp-action="Privacy">Privacy</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Employee" asp-action="List">
-                                Employees
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Task" asp-action="List">
-                                Tasks
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="AjaxTask" asp-action="Index">
-                                Ajax-Tasks
-                            </a>
-                        </li>
                     </ul>
                 </div>
-                @if (Context.Session.GetString("ProfileImage") != null)
-                {
-                    <div class="dropdown">
-                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                            <img src="@($"/profile_images/{Context.Session.GetString("ProfileImage") ?? "Anonymous.png"}")" 
-                                class="rounded-circle border object-fit-contain" height="40px" width="40px" alt="Profile">
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="@Url.Action("Profile", "Employee")">Profile</a></li>
-                            <li><a class="dropdown-item" href="@Url.Action("Logout", "Employee")">Logout</a></li>
-                        </ul>
-                    </div>
-                }
-                else
-                {
-                    <div>
-                        <a href="@Url.Action("Login", "Employee")" class="btn btn-light">Sign In</a>
-                    </div>
-                }
+                <div id="profileMenu"> 
+                </div>
             </div>
         </nav>
     </header>

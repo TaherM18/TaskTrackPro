@@ -1,17 +1,13 @@
 @{
     ViewData["Title"] = "Tasks";
 }
-@model List<Repositories.Models.Task>
 
-@if (TempData["Message"] != null)
-{
-    <div class="alert alert-primary" role="alert">
-        @TempData["Message"]
-    </div>
-}
+<div class="mb-2">
+    <div id="alert" role="alert"></div>
+</div>
 
 <div class="container mt-4">
-    <table class="table table-striped" id="task-table">
+    <table class="table table-striped" id="taskTable">
         <thead class="thead-dark">
             <tr class="row">
                 <th class="col-1 text-center">Edit</th>
@@ -25,31 +21,79 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var task in Model)
-            {
-                <tr class="row">
-                    <td class="col-1 text-center">
-                        <a href="@Url.Action("Create", "Task", new { id = task.TaskId })" class="btn btn-sm btn-warning">
-                            Edit
-                        </a>
-                    </td>
-                    <td class="col-2 text-center">@task.Title</td>
-                    <td class="col-4 text-center">@task.Description</td>
-                    <td class="col-1 text-center">@task.EstimatedDays</td>
-                    <td class="col-1 text-center">@task.StartDate.ToShortDateString()</td>
-                    <td class="col-1 text-center">@task.EndDate.ToShortDateString()</td>
-                    <td class="col-1 text-center">@task.Status</td>
-                    <td class="col-1 text-center">
-                        <a href="@Url.Action("Delete", "Task", new { id = task.TaskId })" class="btn btn-sm btn-danger">
-                            Delete
-                        </a>
-                    </td>
-                </tr>
-            }
+            <!-- This will be filled dynamically -->
         </tbody>
     </table>
 
     <div class="mt-5">
-        <a href="@Url.Action("Create", "Task")" class="btn btn-info">Add Task</a>
+        <button id="btnAdd" class="btn btn-info">Add Task</button>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        const baseUrl = "http://localhost:5267/api/task";
+
+        // ========
+
+        function loadTaskData() {
+            $.ajax({
+                url: baseUrl,
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    $('#taskTable tbody').empty();
+
+                    $.each(data, function (index, task) {
+                        $('#taskTable tbody').append(`
+                            <tr class="row">
+                                <td class="col-1 text-center">
+                                    <button id="btnEdit" data-id="${task.taskId}" class="btn btn-sm btn-warning">
+                                        Edit
+                                    </button>
+                                </td>
+                                <td class="col-2 text-center">${task.title}</td>
+                                <td class="col-4 text-center">${task.description}</td>
+                                <td class="col-1 text-center">${task.estimatedDays}</td>
+                                <td class="col-1 text-center">${task.startDate}</td>
+                                <td class="col-1 text-center">${task.endDate}</td>
+                                <td class="col-1 text-center">${task.status}</td>
+                                <td class="col-1 text-center">
+                                    <button id="btnDelete" data-id="${task.taskId}" class="btn btn-sm btn-danger">
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        `);
+                    )};
+                },
+                error: function (error) {
+                    console.error('Error loading task data:', error);
+                }
+            });
+        }
+
+        // ========
+
+        $(document).ready(function () {
+            loadTaskData();
+             // ========
+
+            $('#btnAdd').on('click', function() {
+
+            });
+
+             // ========
+
+            $('#btnEdit').on('click', function() {
+
+            });
+
+             // ========
+
+            $('#btnDelete').on('click', function() {
+
+            });
+        });
+    </script>
+}

@@ -34,36 +34,37 @@ namespace API.Controllers
         public async Task<IActionResult> Login([FromForm] LoginVM user)
         {
             User? UserData = await _user.Login(user);
-            if (UserData != null)
+            if (UserData == null) 
             {
-                Console.WriteLine($"UserID :: {UserData.UserId} :: {UserData.Role}");
-                var claims = new[]
+                return Unauthorized(new
                 {
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim("UserId", UserData.UserId.ToString() ?? string.Empty),
-                    new Claim("UserName", UserData.FirstName + " " + UserData.LastName),
-                    new Claim(ClaimTypes.Role, UserData.Role.ToString())
-                };
-                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? string.Empty));
-                var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-                var token = new JwtSecurityToken(
-                    issuer: _config["Jwt:Issuer"],
-                    audience: _config["Jwt:Audience"],
-                    claims: claims,
-                    expires: DateTime.UtcNow.AddDays(1),
-                    signingCredentials: signIn
-                );
-
-                return Ok(new
-                {
-                    message = "Login Success",
-                    data = UserData,
-                    token = new JwtSecurityTokenHandler().WriteToken(token)
+                    message = "Invalid Credentials"
                 });
             }
-            return BadRequest(new
+
+            Console.WriteLine($"UserID :: {UserData.UserId} :: {UserData.Role}");
+            var claims = new[]
             {
-                message = "Login Failed"
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim("UserId", UserData.UserId.ToString() ?? string.Empty),
+                new Claim("UserName", UserData.FirstName + " " + UserData.LastName),
+                new Claim(ClaimTypes.Role, UserData.Role.ToString())
+            };
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? string.Empty));
+            var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var token = new JwtSecurityToken(
+                issuer: _config["Jwt:Issuer"],
+                audience: _config["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddDays(1),
+                signingCredentials: signIn
+            );
+
+            return Ok(new
+            {
+                message = "Login Success",
+                data = UserData,
+                token = new JwtSecurityTokenHandler().WriteToken(token)
             });
         }
         #endregion
