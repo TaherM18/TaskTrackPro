@@ -5,10 +5,9 @@ namespace Repositories.Models
 {
     public class User
     {
-        public Guid UserId { get; set; }
+        public Guid? UserId { get; set; }
 
         [Required(ErrorMessage = "Role is required")]
-        [StringLength(1)]
         public char Role { get; set; } = 'E';
 
         [Required(ErrorMessage = "First name is required")]
@@ -32,7 +31,6 @@ namespace Repositories.Models
         [StringLength(15)]
         public string? Contact { get; set; }
 
-        [StringLength(1)]
         public char? Gender { get; set; }
 
         public string? Image { get; set; }
