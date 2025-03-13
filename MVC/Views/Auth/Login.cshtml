@@ -2,100 +2,196 @@
     ViewData["Title"] = "Login";
     Layout = "~/Views/Shared/_HomeLayout.cshtml";
 }
-@model Repositories.Models.LoginVM
+
+@section Styles {
+    <style>
+    :root {
+        --primary-color: #133E87;
+        --secondary-color: #608BC1;
+        --accent-color: #CBDCEB;
+        --background-color: #F3F3E0;
+        --text-color: #333;
+    }
+
+    body {
+        background-color: var(--background-color);
+        font-family: 'Poppins', sans-serif;
+        color: var(--text-color);
+    }
+
+    .navbar {
+        background-color: var(--primary-color);
+        padding: 15px;
+    }
+
+    .navbar-brand,
+    .nav-link {
+        color: black !important;
+        font-weight: 600;
+    }
+
+    .container {
+        max-width: 1200px;
+        padding: 50px 30px;
+    }
+
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 50px;
+    }
+
+    h2 {
+        font-size: 2.2rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: var(--primary-color);
+    }
+
+    .form-group label {
+        font-weight: 500;
+        color: var(--text-color);
+    }
+
+    .form-control {
+        padding: 14px;
+        font-size: 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--accent-color);
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        padding: 14px;
+        font-size: 1rem;
+        width: 100%;
+        border-radius: 8px;
+        font-weight: bold;
+    }
+
+    .btn-primary:hover {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+    }
+
+    .btn-info {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+        padding: 12px 24px;
+        font-size: 1rem;
+        border-radius: 8px;
+        font-weight: bold;
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-info:hover {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .img-fluid {
+        max-width: 100%;
+        height: auto;
+        border-radius: 12px;
+    }
+
+    .text-center p {
+        margin-bottom: 10px;
+        font-size: 1.1rem;
+    }
+</style>
+}
 
 <div class="mb-2">
     <div id="responseMessage" class="alert-dismissible fade show" role="alert"></div>
 </div>
 
-<h2>Login</h2>
-<div class="row">
-    <div class="col-md-4 m-auto">
+<div class="row align-items-center g-5">
+    <div class="col-md-30">
         <div class="card">
             <div class="card-body">
+                <h2 style="text-align: center">Login</h2>
                 <form id="loginForm">
-                    <div class="input-group mb-3">
-                        <span class="input-group-text"><i class="fa fa-user"></i></span>
-                        <input type="email" id="email" name="Email" class="form-control" placeholder="Email">
+                    <div class="form-group mt-3">   
+                        <label for="email">Email:</label>
+                        <input type="email" class="form-control" id="email" name="Email"
+                            placeholder="Enter Email" required />
                     </div>
-                    <div class="input-group mb-4">
-                        <span class="input-group-text"><i class="fa fa-lock"></i></span>
-                        <input type="password" id="pwd" name="Password" class="form-control" placeholder="Password">
+                    <div class="form-group mt-3">
+                        <label for="password">Password:</label>
+                        <input type="password" class="form-control" id="password" name="Password"
+                            placeholder="Enter Password" required />
                     </div>
-                    <div class="row">
-                        <div class="col-6">
-                            <button id="btnLogin" type="submit" class="btn btn-primary px-4">Login</button>
-                        </div>
-                        <div class="col-6 text-right">
-                            <button type="button" class="btn btn-link px-0">Forgot password?</button>
-                        </div>
-                    </div>
+                    <button type="submit" class="btn btn-primary mt-4">Login</button>
                 </form>
+                <div class="signup-text" style="text-align: center; padding: 20px;">
+                    <p>Don't have an account? <a href="@Url.Action("Create", "Employee")" style="color: var(--primary-color);">Signup here</a></p>
+                </div>
             </div>
-        </div>
-        <div class="mt-5">
-            <p>New to TaskTrackerPro?</p>
-            <a class="btn btn-info btn-sm" href="@Url.Action("Register", "Employee")">Register Here</a>
+            <div class="col-md-6 text-center">
+                <img src="~/images/Logini1.png" alt="Login Illustration" class="img-fluid">
+            </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
-   <script>
-        // 🔹 Get Login Form Data
-        function getFormData() {
-            const formData = new FormData();
-            formData.append("Email", $('#email').val());
-            formData.append("Password", $('#pwd').val());
-            return formData;
-        }
-
-        // 🔹 Handle Login Process
-        function handleLogin() {
-            const formData = getFormData();
-
-            $.ajax({
-                url: 'http://localhost:5267/api/user/auth',
-                type: 'POST',
-                data: formData,
-                contentType: false,
-                processData: false,
-                success: function (response) {
-                    console.log(response);
-                    
-                    $('#responseMessage').removeClass().addClass("alert alert-success");
-                    $('#responseMessage').text(response.message + " Redirecting...");
-                    localStorage.setItem("token", response.token);
-                    sessionStorage.setItem("user", JSON.stringify(response.data));
-
-                    switch (response.data.role) {
-                        case "A":
-                            setTimeout(() => window.location.assign("/Admin/Index"), 2000);
-                            break;
-                        case "E":
-                            setTimeout(() => window.location.assign("/Employee/Index"), 2000);
-                            break;
-                    }
-                },
-                error: function (xhr, status, error) {
-                    console.log("xhr:", xhr);
-                    console.log("status:",status);
-                    console.log("error:",error);
-                    let jsonResponse = xhr.responseJSON
-                    console.log(jsonResponse);
-                    $('#responseMessage').removeClass().addClass("alert alert-danger");
-                    $('#responseMessage').html(jsonResponse.message);
-                }
-            });
-        }
-
-        //
-
+    <script>
         $(document).ready(function () {
+            $('#loginForm').on('submit', function (e) {
+                e.preventDefault();
+                
+                var formData = $(this).serialize(); // Serialize form data
 
-            $('#loginForm').submit(function (event) {
-                event.preventDefault();
-                handleLogin();
+                $.ajax({
+                    url: 'http://localhost:5267/api/user/auth',
+                    type: 'POST',
+                    data: formData,
+                    contentType: 'application/x-www-form-urlencoded',
+                    success: function (response) {
+                        localStorage.setItem("token", response.token);
+                        sessionStorage.setItem("user", JSON.stringify(response.data));
+
+                        Swal.fire({
+                            title: "Login Successful!",
+                            text: "Redirecting to your Dashboard...",
+                            icon: "success",
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            switch (response.data.role) {
+                                case "A":
+                                    window.location.href = "/Admin/Index";
+                                    break;
+                                case "E":
+                                    window.location.href = "/Employee/Index";
+                                    break;
+                                default:
+                                    window.location.href = "/Home/Index";
+                            }
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.log("xhr:",xhr);
+                        console.log("status:",status);
+                        console.log("error:",error);
+
+                        const message = xhr.responseJSON?.message || "Login failed. Please try again.";
+                        Swal.fire({
+                            title: "Login Failed",
+                            text: message,
+                            icon: "error",
+                            confirmButtonColor: "#133E87"
+                        });
+                    }
+                });
             });
         });
     </script>

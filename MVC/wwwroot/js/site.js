@@ -9,13 +9,15 @@ function checkIdentityAndAccess() {
         case "admin":
             if (user == null || user.role != "A") {
                 alert("You are not authorized to view this page");
-                window.location.assign("/Auth/Login");
+                // window.location.assign("/Auth/Login");
+                window.history.back();
             }
             break;
         case "employee":
             if (user == null || user.role != "E") {
                 alert("You are not authorized to view this page");
-                window.location.assign("/Auth/Login");
+                // window.location.assign("/Auth/Login");
+                window.history.back();
             }
             break;
         default:
@@ -27,15 +29,16 @@ function checkIdentityAndAccess() {
 //
 
 function setProfileDiv() {
-    let user = sessionStorage.getItem("user");
+    let user = JSON.parse(sessionStorage.getItem("user"));
     if (user != null) {
         // user is logged in
         htmlContent = `<div class="btn-group">
         <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-            <img height="40px" width="auto" src="/profile_images/${user.image}" onerror="this.src='/profile_images/placeholder.jpg'">
+            <span>${user.firstName} ${user.lastName}</span>
+            <img class="rounded-circle img-thumbnail" style="height:40px; width:fit-content" src="/profile_images/${user.image}" onerror="this.src='/profile_images/placeholder.jpg'">
         </button>
         <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="Profile">Profile</a></li>
+            <li><a class="dropdown-item" href="/${user.role == "A" ? "Admin" : "Employee"}/Profile">Profile</a></li>
             <li><a class="dropdown-item" href="/Auth/Logout">Logout</a></li>
         </ul>
     </div>`;
