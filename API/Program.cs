@@ -6,6 +6,8 @@ using Npgsql;
 using Repositories.Implementations;
 using Repositories.Interfaces;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
+using Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +32,17 @@ builder.Services.AddSingleton<NpgsqlConnection>((serviceProvider) =>
     var connectionString = serviceProvider.GetRequiredService<IConfiguration>().GetConnectionString("pgconn");
     return new NpgsqlConnection(connectionString);
 });
+
+// Redis Connection
+builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
+{
+    var redisConnectionString = builder.Configuration.GetConnectionString("Redis")
+        ?? throw new ArgumentNullException("Redis is not defined");
+    return ConnectionMultiplexer.Connect(redisConnectionString);
+});
+
+// Register RedisService
+builder.Services.AddSingleton<RedisService>();
 
 // Configure JWT Authentication
 builder.Services.AddAuthentication(option =>
