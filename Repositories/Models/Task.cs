@@ -4,7 +4,7 @@ namespace Repositories.Models
 {
     public class Task
     {
-        public Guid TaskId { get; set; }
+        public Guid? TaskId { get; set; }
         public Guid UserId { get; set; }
 
         [Required(ErrorMessage = "Title is required")]

@@ -24,6 +24,12 @@ namespace MVC.Controllers
         }
         #endregion
 
+        #region Get: Register
+        public IActionResult Register()
+        {
+            return View();
+        }
+        #endregion
 
         #region Get: Logout
         [HttpGet]
