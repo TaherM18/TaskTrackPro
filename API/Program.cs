@@ -8,7 +8,9 @@ using Repositories.Interfaces;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 using Services;
-
+//Elastic service
+using Elastic.Clients.Elasticsearch;
+using Elastic.Transport;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -92,6 +94,31 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+//Elastic Search Services
+builder.Services.AddSingleton<ElasticsearchService>();
+
+builder.Services.AddSingleton(provider =>
+{
+    var configuration = builder.Configuration;
+
+    // Ensure required values are not null
+    string elasticUri = configuration["Elasticsearch:Uri"]
+        ?? throw new InvalidOperationException("Elasticsearch:Uri is missing from configuration.");
+    string taskIndex = configuration["Elasticsearch:TaskIndex"]
+        ?? throw new InvalidOperationException("Elasticsearch:TaskIndex is missing from configuration.");
+    string username = configuration["Elasticsearch:Username"]
+        ?? throw new InvalidOperationException("Elasticsearch:Username is missing from configuration.");
+    string password = configuration["Elasticsearch:Password"]
+        ?? throw new InvalidOperationException("Elasticsearch:Password is missing from configuration.");
+
+    var settings = new ElasticsearchClientSettings(new Uri(elasticUri))
+        .ServerCertificateValidationCallback(CertificateValidations.AllowAll)
+        .DefaultIndex(taskIndex)
+        .Authentication(new BasicAuthentication(username, password))
+        .DisableDirectStreaming();
+
+    return new ElasticsearchClient(settings);
+});
 
 
 var app = builder.Build();
@@ -111,5 +138,35 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+// Indexing for Elasticsearch
+app.Lifetime.ApplicationStarted.Register(async () =>
+{
+    using var scope = app.Services.CreateScope();
+    var taskRepository = scope.ServiceProvider.GetRequiredService<ITaskInterface>();
+    var esService = scope.ServiceProvider.GetRequiredService<ElasticsearchService>();
+
+    try
+    {
+        await esService.CreateIndexAsync();
+        var esServiceRepo = await taskRepository.GetAll();
+
+        if (esServiceRepo.Any())
+        {
+            foreach (var task in esServiceRepo)
+            {
+                await esService.IndexTaskAsync(task);
+            }
+            Console.WriteLine($"✅ {esServiceRepo.Count} Tasks indexed successfully in Elasticsearch.");
+        }
+        else
+        {
+            Console.WriteLine("⚠️ No tasks found in PostgreSQL.");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Error indexing tasks: {ex.Message}");
+    }
+});
 
 app.Run();
