@@ -72,23 +72,28 @@ namespace Services
         }
         #endregion
         #region Search Method
-        public async Task<List<Repositories.Models.Task>> SearchTaskByTitleAsync(string title)
+        public async Task<List<Repositories.Models.Task>> SearchTasksAsync(string searchTerm)
         {
             var response = await _client.SearchAsync<Repositories.Models.Task>(s => s
-            .Index(_taskIndex)
-            .Query(q => q
-                .Match(m => m
-                    .Field(f => f.Title)
-                    .Query(title)
+                .Index(_taskIndex)
+                .Query(q => q
+                    .Bool(b => b
+                        .Should(
+                            m => m.Match(mq => mq.Field(f => f.Title).Query(searchTerm)),
+                            m => m.Match(mq => mq.Field(f => f.Description).Query(searchTerm)),
+                            m => m.Match(mq => mq.Field(f => f.Status).Query(searchTerm))
+                        )
+                    )
                 )
-            )
             );
+
             if (!response.IsValidResponse)
             {
                 Console.WriteLine($"❌ Elasticsearch query failed: {response.DebugInformation}");
                 return new List<Repositories.Models.Task>();
             }
-            if (response == null || response.Documents == null || !response.Documents.Any())
+
+            if (response.Documents == null || !response.Documents.Any())
             {
                 Console.WriteLine("Elasticsearch query returned no results.");
                 return new List<Repositories.Models.Task>();

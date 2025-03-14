@@ -10,7 +10,7 @@ namespace API.Controllers
     {
         private readonly ITaskInterface _taskRepo;
         private readonly RedisService _redisService;
-                    private readonly ElasticsearchService _elasticService;
+        private readonly ElasticsearchService _elasticService;
 
         private const int CACHE_DURATION_MINUTES = 30;
 
@@ -20,16 +20,15 @@ namespace API.Controllers
             _redisService = redisService;
             _elasticService = elasticsearchService;
         }
-        #region Elastic search Task Name
-        [HttpGet("search/{title}")]
-        public async Task<IActionResult> SearchTask(string title)
+        #region Elastic search Task Name, Description, Status
+        [HttpGet("search/{query}")]
+        public async Task<IActionResult> SearchTasks(string query)
         {
-            var tasks = await _elasticService.SearchTaskByTitleAsync(title);
+            var tasks = await _elasticService.SearchTasksAsync(query);
             return tasks == null || !tasks.Any()
                 ? NotFound(new { success = false, message = "No tasks found." })
                 : Ok(new { success = true, data = tasks });
         }
-
         #endregion
 
         #region Get: Get All
