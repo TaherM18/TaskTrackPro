@@ -118,21 +118,23 @@
         <div class="card">
             <div class="card-body">
                 <h2 style="text-align: center">Login</h2>
-                <form id="loginForm">
+                <form id="loginForm" novalidate>
                     <div class="form-group mt-3">   
                         <label for="email">Email:</label>
-                        <input type="email" class="form-control" id="email" name="Email"
+                        <input type="email" class="form-control" id="email" name="email"
                             placeholder="Enter Email" required />
+                        <span id="msg-email" class="text-danger"></span>
                     </div>
                     <div class="form-group mt-3">
                         <label for="password">Password:</label>
-                        <input type="password" class="form-control" id="password" name="Password"
+                        <input type="password" class="form-control" id="password" name="password"
                             placeholder="Enter Password" required />
+                        <span id="msg-password" class="text-danger"></span>
                     </div>
                     <button type="submit" class="btn btn-primary mt-4">Login</button>
                 </form>
                 <div class="signup-text" style="text-align: center; padding: 20px;">
-                    <p>Don't have an account? <a href="@Url.Action("Create", "Employee")" style="color: var(--primary-color);">Signup here</a></p>
+                    <p>Don't have an account? <a href="@Url.Action("Register", "Auth")" style="color: var(--primary-color);">Signup here</a></p>
                 </div>
             </div>
             <div class="col-md-6 text-center">
@@ -143,55 +145,97 @@
 </div>
 
 @section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+
     <script>
+        function handleFormSubmit() {
+            const formData = $('#loginForm').serialize(); // Serialize form data
+
+            $.ajax({
+                url: 'http://localhost:5267/api/user/auth',
+                type: 'POST',
+                data: formData,
+                contentType: 'application/x-www-form-urlencoded',
+                success: function (response) {
+                    localStorage.setItem("token", response.token);
+                    sessionStorage.setItem("user", JSON.stringify(response.data));
+
+                    Swal.fire({
+                        title: "Login Successful!",
+                        text: "Redirecting to your dashboard...",
+                        icon: "success",
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        switch (response.data.role) {
+                            case "A":
+                                window.location.href = "/Admin/Index";
+                                break;
+                            case "E":
+                                window.location.href = "/Employee/Index";
+                                break;
+                            default:
+                                window.location.href = "/Home/Index";
+                        }
+                    });
+                },
+                error: function (xhr, status, error) {
+                    console.log("xhr:",xhr);
+                    console.log("status:",status);
+                    console.log("error:",error);
+
+                    const message = xhr.responseJSON?.message || "Login failed. Please try again.";
+                    Swal.fire({
+                        title: "Login Failed",
+                        text: message,
+                        icon: "error",
+                        confirmButtonColor: "#133E87"
+                    });
+                }
+            });
+        }
+
         $(document).ready(function () {
-            $('#loginForm').on('submit', function (e) {
-                e.preventDefault();
-                
-                var formData = $(this).serialize(); // Serialize form data
-
-                $.ajax({
-                    url: 'http://localhost:5267/api/user/auth',
-                    type: 'POST',
-                    data: formData,
-                    contentType: 'application/x-www-form-urlencoded',
-                    success: function (response) {
-                        localStorage.setItem("token", response.token);
-                        sessionStorage.setItem("user", JSON.stringify(response.data));
-
-                        Swal.fire({
-                            title: "Login Successful!",
-                            text: "Redirecting to your Dashboard...",
-                            icon: "success",
-                            timer: 2000,
-                            showConfirmButton: false
-                        }).then(() => {
-                            switch (response.data.role) {
-                                case "A":
-                                    window.location.href = "/Admin/Index";
-                                    break;
-                                case "E":
-                                    window.location.href = "/Employee/Index";
-                                    break;
-                                default:
-                                    window.location.href = "/Home/Index";
-                            }
-                        });
+           // Form validation rules
+            $('#loginForm').validate({
+                rules: {
+                    email: {
+                        required: true,
+                        email: true
                     },
-                    error: function (xhr, status, error) {
-                        console.log("xhr:",xhr);
-                        console.log("status:",status);
-                        console.log("error:",error);
-
-                        const message = xhr.responseJSON?.message || "Login failed. Please try again.";
-                        Swal.fire({
-                            title: "Login Failed",
-                            text: message,
-                            icon: "error",
-                            confirmButtonColor: "#133E87"
-                        });
+                    password: {
+                        required: true,
+                        minlength: 6
                     }
-                });
+                },
+                messages: {
+                    email: {
+                        required: "Please enter your email",
+                        email: "Please enter a valid email address"
+                    },
+                    password: {
+                        required: "Please enter a password",
+                        minlength: "Password must be at least 6 characters"
+                    }
+                },
+                errorPlacement: function(error, element) {
+                    const msgId = "#msg-" + $(element).attr("name");
+                    $(msgId).removeClass('text-success').addClass('text-danger').text(error.text());
+                },
+                highlight: function(element) {
+                    // error
+                    $(element).removeClass('is-valid').addClass('is-invalid');
+                },
+                unhighlight: function(element) {
+                    // success
+                    $(element).removeClass('is-invalid').addClass('is-valid');
+                    const msgId = "#msg-" + $(element).attr("name");
+                    $(msgId).removeClass('text-danger').addClass('text-success').text("Looks good!");
+                },
+                submitHandler: function (form, event) {
+                    event.preventDefault();
+                    handleFormSubmit();
+                }
             });
         });
     </script>

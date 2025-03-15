@@ -94,6 +94,7 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
 //Elastic Search Services
 builder.Services.AddSingleton<ElasticsearchService>();
 
@@ -138,6 +139,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
 // Indexing for Elasticsearch
 app.Lifetime.ApplicationStarted.Register(async () =>
 {

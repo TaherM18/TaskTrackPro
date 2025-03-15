@@ -23,7 +23,7 @@ function checkIdentityAndAccess() {
             if (user == null || user.role != "E") {
                 Swal.fire({
                     title: "Unauthorized access",
-                    text: "Going back...",
+                    text: "Redirecting...",
                     icon: "error",
                     timer: 2000,
                     showConfirmButton: false
@@ -47,7 +47,7 @@ function setProfileDiv() {
         htmlContent = `<div class="btn-group">
         <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
             <span>${user.firstName} ${user.lastName}</span>
-            <img class="rounded-circle img-thumbnail" style="height:40px; width:fit-content" src="/profile_images/${user.image}" onerror="this.src='/profile_images/placeholder.jpg'">
+            <img class="rounded-circle" style="height:40px; width:40px;" src="/profile_images/${user.image}" onerror="this.src='/profile_images/placeholder.jpg'">
         </button>
         <ul class="dropdown-menu dropdown-menu-end">
             <li><a class="dropdown-item" href="/${user.role == "A" ? "Admin" : "Employee"}/Profile">Profile</a></li>

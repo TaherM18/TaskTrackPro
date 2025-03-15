@@ -141,7 +141,7 @@
                 success: function (response) {
                     $('#taskTreeView').empty();
                     
-                    if (response.success && response.data) {
+                    if (response.data.length > 0) {
                         // Group tasks by user
                         const tasksByUser = {};
                         response.data.forEach(task => {

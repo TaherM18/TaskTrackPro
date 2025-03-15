@@ -82,7 +82,11 @@ namespace Repositories.Implementations
             
             try
             {
+                if (_con.State == System.Data.ConnectionState.Open)
+                    await _con.CloseAsync();
+
                 await _con.OpenAsync();
+                
                 using (NpgsqlCommand cmd = new NpgsqlCommand(check_query, _con))
                 {
                     cmd.Parameters.AddWithValue("@c_email", model.Email ?? "");
@@ -91,11 +95,11 @@ namespace Repositories.Implementations
 
                 using (NpgsqlCommand cmd = new NpgsqlCommand(query, _con))
                 {
-                    cmd.Parameters.AddWithValue("@c_role", model.Role);
-                    cmd.Parameters.AddWithValue("@c_first_name", model.FirstName);
-                    cmd.Parameters.AddWithValue("@c_last_name", model.LastName);
-                    cmd.Parameters.AddWithValue("@c_email", model.Email);
-                    cmd.Parameters.AddWithValue("@c_password", model.Password);
+                    cmd.Parameters.AddWithValue("@c_role", (object?)model.Role ?? 'E');
+                    cmd.Parameters.AddWithValue("@c_first_name", (object?)model.FirstName ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@c_last_name", (object?)model.LastName ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@c_email", (object?)model.Email ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@c_password", (object?)model.Password ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@c_address", (object?)model.Address ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@c_contact", (object?)model.Contact ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@c_gender", (object?)model.Gender ?? DBNull.Value);
@@ -119,9 +123,33 @@ namespace Repositories.Implementations
 
 
         #region Delete
-        public Task<int> Delete(string id)
+        public async Task<int> Delete(string id)
         {
-            throw new NotImplementedException();
+            const string query = @"
+            DELETE FROM ttp.t_user
+            WHERE c_userId = @c_userId
+            ";
+            try
+            {
+                if (_con.State == System.Data.ConnectionState.Open)
+                    await _con.CloseAsync();
+
+                await _con.OpenAsync();
+
+                using (NpgsqlCommand cmd = new NpgsqlCommand(query, _con))
+                {
+                    cmd.Parameters.AddWithValue("@c_userId", id);
+                    await cmd.ExecuteNonQueryAsync();
+                    return 1;
+                }
+            }
+            catch (Exception ex) {
+                Console.WriteLine($"[ERROR] UserRepository - Delete - {ex.Message}");
+                return 0;
+            }
+            finally {
+                await _con.CloseAsync();
+            }
         }
         #endregion
 
@@ -134,6 +162,9 @@ namespace Repositories.Implementations
 
             try
             {
+                if (_con.State == System.Data.ConnectionState.Open)
+                    await _con.CloseAsync();
+                    
                 using (NpgsqlCommand cmd = new NpgsqlCommand(query, _con))
                 {
                     await _con.OpenAsync();
@@ -181,6 +212,9 @@ namespace Repositories.Implementations
 
             try
             {
+                if (_con.State == System.Data.ConnectionState.Open)
+                    await _con.CloseAsync();
+
                 using (NpgsqlCommand cmd = new NpgsqlCommand(query, _con))
                 {
                     cmd.Parameters.AddWithValue("@c_userid", Guid.Parse(id));
@@ -231,8 +265,7 @@ namespace Repositories.Implementations
         {
             string query = @"
             UPDATE ttp.t_user 
-            SET c_role = @c_role,
-                c_first_name = @c_first_name,
+            SET c_first_name = @c_first_name,
                 c_last_name = @c_last_name,
                 c_email = @c_email,
                 c_address = @c_address,
@@ -243,13 +276,15 @@ namespace Repositories.Implementations
 
             try
             {
+                if (_con.State == System.Data.ConnectionState.Open)
+                    await _con.CloseAsync();
+
                 using (NpgsqlCommand cmd = new NpgsqlCommand(query, _con))
                 {
                     cmd.Parameters.AddWithValue("@c_userid", model.UserId);
-                    cmd.Parameters.AddWithValue("@c_role", model.Role);
-                    cmd.Parameters.AddWithValue("@c_first_name", model.FirstName);
-                    cmd.Parameters.AddWithValue("@c_last_name", model.LastName);
-                    cmd.Parameters.AddWithValue("@c_email", model.Email);
+                    cmd.Parameters.AddWithValue("@c_first_name", (object?)model.FirstName ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@c_last_name", (object?)model.LastName ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@c_email", (object?)model.Email ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@c_address", (object?)model.Address ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@c_contact", (object?)model.Contact ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@c_gender", (object?)model.Gender ?? DBNull.Value);
@@ -272,8 +307,6 @@ namespace Repositories.Implementations
                     await _con.CloseAsync();
                 }
             }
-
-            return 1;
         }
         #endregion
 
@@ -285,6 +318,9 @@ namespace Repositories.Implementations
             {
                 const string checkQuery = "SELECT c_password FROM ttp.t_user WHERE c_userid = @c_userid";
                 const string updateQuery = "UPDATE ttp.t_user SET c_password = @c_password WHERE c_userid = @c_userid";
+
+                if (_con.State == System.Data.ConnectionState.Open)
+                    await _con.CloseAsync();
 
                 await _con.OpenAsync();
 

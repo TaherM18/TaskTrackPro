@@ -311,7 +311,7 @@ namespace Repositories.Implementations
                     cmd.Parameters.AddWithValue("@c_start_date", NpgsqlDbType.Date, model.StartDate);
                     cmd.Parameters.AddWithValue("@c_end_date", (object?)model.EndDate ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@c_status", model.Status);
-                    cmd.Parameters.AddWithValue("@c_taskid", model.TaskId);
+                    cmd.Parameters.AddWithValue("@c_taskid", (object?)model.TaskId ?? DBNull.Value);
 
                     await _con.OpenAsync();
                     await cmd.ExecuteNonQueryAsync();
