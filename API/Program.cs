@@ -28,6 +28,7 @@ builder.Services.AddCors(p => p.AddPolicy("corsapp", builder =>
 builder.Services.AddSingleton<IUserInterface, UserRepository>();
 builder.Services.AddSingleton<ITaskInterface, TaskRepository>();
 builder.Services.AddScoped<IChatInterface, ChatRepository>();
+builder.Services.AddScoped<INotificationInterface, NotificationRepository>();
 
 // Register Database Connection
 builder.Services.AddSingleton<NpgsqlConnection>((serviceProvider) =>

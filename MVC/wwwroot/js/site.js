@@ -61,6 +61,53 @@ function setProfileDiv() {
     $("#profileMenu").html(htmlContent);
 }
 
+//
+
+function loadNotifications() {
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    if (!user) return;
+
+    $.ajax({
+        url: `http://localhost:5267/api/notification/${user.userId}`,
+        method: 'GET',
+        success: function(response) {
+            updateNotificationList(response.data);
+        },
+        error: function(xhr) {
+            console.error('Error fetching notifications:', xhr);
+        }
+    });
+}
+
+function markAsRead(notificationId) {
+    $.ajax({
+        url: `http://localhost:5267/api/notification/mark-read/${notificationId}`,
+        method: 'PUT',
+        success: function() {
+            loadNotifications(); // Refresh the list
+        },
+        error: function(xhr) {
+            console.error('Error marking notification as read:', xhr);
+        }
+    });
+}
+
+function markAllAsRead() {
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    if (!user) return;
+
+    $.ajax({
+        url: `http://localhost:5267/api/notification/mark-all-read/${user.userId}`,
+        method: 'PUT',
+        success: function() {
+            loadNotifications(); // Refresh the list
+        },
+        error: function(xhr) {
+            console.error('Error marking all notifications as read:', xhr);
+        }
+    });
+}
+
 function updateNotificationList(notifications) {
     const notificationList = $("#notificationList");
     notificationList.empty();
@@ -76,10 +123,12 @@ function updateNotificationList(notifications) {
 
     notifications.forEach(notification => {
         const html = `
-            <div class="notification-item ${notification.isRead ? '' : 'unread'}" data-id="${notification.id}">
+            <div class="notification-item ${notification.isRead ? '' : 'unread'}" 
+                 onclick="markAsRead(${notification.notificationId})"
+                 data-id="${notification.notificationId}">
                 <div class="d-flex align-items-center">
-                    <div class="notification-icon ${notification.type}">
-                        <i class="fas ${getNotificationIcon(notification.type)}"></i>
+                    <div class="notification-icon ${notification.type.toLowerCase()}">
+                        <i class="fas ${getNotificationIcon(notification.type.toLowerCase())}"></i>
                     </div>
                     <div class="flex-grow-1">
                         <div class="notification-title">${notification.title}</div>
@@ -135,29 +184,19 @@ function markAllAsRead() {
     // Then refresh notifications
 }
 
-// Example usage:
-$(document).ready(function() {
-    // Sample data - replace with your API call
-    const sampleNotifications = [
-        {
-            id: 1,
-            type: 'task',
-            title: 'New Task Assigned',
-            description: 'You have been assigned a new task: Project Review',
-            createdAt: new Date(Date.now() - 30000),
-            isRead: false
-        },
-        {
-            id: 2,
-            type: 'message',
-            title: 'New Message',
-            description: 'John sent you a message regarding the project',
-            createdAt: new Date(Date.now() - 3600000),
-            isRead: true
-        }
-    ];
-
-    updateNotificationList(sampleNotifications);
+// usage:
+$(document).ready(function() {  
+    // Load notifications initially
+    loadNotifications();
+    
+    // Refresh notifications every 30 seconds
+    setInterval(loadNotifications, 30000);
+    
+    // Handle notification click events
+    $(document).on('click', '.notification-item', function() {
+        const notificationId = $(this).data('id');
+        markAsRead(notificationId);
+    });
 });
 
 // =========================================================================
