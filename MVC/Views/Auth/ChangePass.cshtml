@@ -4,42 +4,35 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container mt-4">
-    @if (TempData["Message"] != null)
-    {
-        <div class="alert alert-primary alert-dismissible fade show" role="alert">
-            @TempData["Message"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
+<div class="mt-4">
     <div class="row">
         <div class="col-md-4 m-auto">
 
             <div class="card">
                 <div class="card-header">Change Password</div>
                 <div class="card-body">
-                    <form asp-action="ChangePass" method="post">
-                        <input type="hidden" asp-for="UserId" />
+                    <form id="changePassForm" novalidate>
+                        <input type="hidden" name="userId" />
 
                         <div class="mb-3">
                             <label class="form-label">Old Password</label>
-                            <input class="form-control" asp-for="OldPassword" type="password" required />
-                            <span asp-validation-for="OldPassword" class="text-danger"></span>
+                            <input class="form-control" name="oldPassword" type="password" required />
+                            <small id="msg-oldPassword" class="text-danger"></small>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">New Password</label>
-                            <input class="form-control" asp-for="NewPassword" type="password" required />
-                            <span asp-validation-for="NewPassword" class="text-danger"></span>
+                            <input class="form-control" name="newPassword" type="password" required />
+                            <small id="msg-newPassword" class="text-danger"></small>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Confirm New Password</label>
-                            <input class="form-control" asp-for="ConfirmPassword" type="password" required />
-                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                            <input class="form-control" name="confirmPassword" type="password" required />
+                            <small id="msg-confirmPassword" class="text-danger"></small>
                         </div>
 
-                        <button type="submit" class="btn btn-warning">Change Password</button>
+                        <button type="submit" id="btnSubmit" class="btn btn-warning">Change Password</button>
                     </form>
                 </div>
             </div>
@@ -52,5 +45,117 @@
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+
+    <script>
+        const user = JSON.parse(sessionStorage.getItem("user"));
+        //
+
+        function handleFormSubmit() {
+            $("#btnSubmit").prop("disabled", true);
+
+            const formData = new FormData();
+            formData.append("UserId", user.userId);
+            formData.append("OldPassword", $('input[name="oldPassword"]').val());
+            formData.append("NewPassword", $('input[name="newPassword"]').val());
+            formData.append("ConfirmPassword", $('input[name="confirmPassword"]').val());
+
+            $.ajax({
+                url: 'http://localhost:5267/api/user/change-pass',
+                method: "PUT",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response, status, xhr) {
+                    Swal.fire({
+                        title: "Password Changed!",
+                        icon: "success",
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    $("#btnSubmit").prop("disabled", false);
+                },
+                error: function(xhr, status, error) {
+                    let errorMessage = "";
+                    
+                    if (xhr.responseJSON.errors) {
+                        // Handle validation errors
+                        errorMessage = Object.values(xhr.responseJSON.errors)
+                            .flat()
+                            .join('\n');
+                    } else if (xhr.responseJSON.message) {
+                        // Handle direct message errors
+                        errorMessage = xhr.responseJSON.message;
+                    } else {
+                        // Fallback error message
+                        errorMessage = "An error occurred while changing password";
+                    }
+
+                    Swal.fire({
+                        title: "Failure!",
+                        text: errorMessage,
+                        icon: "error",
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    $("#btnSubmit").prop("disabled", false);
+                }
+            });
+        }
+        
+        //
+
+        $(document).ready(function() {
+            $("input[name='userId']").val(user.userId);
+
+            // Form validation rules
+            $('#changePassForm').validate({
+                rules: {
+                    oldPassword: {
+                        required: true
+                    },
+                    newPassword: {
+                        required: true,
+                        minlength: 6
+                    },
+                    confirmPassword: {
+                        required: true,
+                        minlength: 6,
+                        equalTo: "input[name='newPassword']"
+                    }
+                },
+                messages: {
+                    oldPassword: {
+                        required: "Please enter your current password"
+                    },
+                    newPassword: {
+                        required: "Please enter your new password",
+                        minlength: "Password must have at least 6 characters"
+                    },
+                    confirmPassword: {
+                        required: "Please confirm your password",
+                        minlength: "Password must have at least 6 characters"
+                    },
+                },
+                errorPlacement: function(error, element) {
+                    const msgId = "#msg-" + $(element).attr("name");
+                    $(msgId).removeClass('text-success').addClass('text-danger').text(error.text());
+                },
+                highlight: function(element) {
+                    // error
+                    $(element).removeClass('is-valid').addClass('is-invalid');
+                },
+                unhighlight: function(element) {
+                    // success
+                    $(element).removeClass('is-invalid').addClass('is-valid');
+                    const msgId = "#msg-" + $(element).attr("name");
+                    $(msgId).removeClass('text-danger').addClass('text-success').text("Looks good!");
+                },
+                submitHandler: function (form, event) {
+                    event.preventDefault();
+                    handleFormSubmit();
+                }
+            });
+        });
+    </script>
 }

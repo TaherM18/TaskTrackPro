@@ -1,5 +1,6 @@
 using System.Data;
 using Npgsql;
+using NpgsqlTypes;
 // 
 using Repositories.Interfaces;
 using Repositories.Models;
@@ -273,12 +274,12 @@ namespace Repositories.Implementations
 
             try
             {
-                if (_con.State == System.Data.ConnectionState.Open)
+                if (_con.State == ConnectionState.Open)
                     await _con.CloseAsync();
 
                 using (NpgsqlCommand cmd = new NpgsqlCommand(query, _con))
                 {
-                    cmd.Parameters.AddWithValue("@c_userid", model.UserId);
+                    cmd.Parameters.AddWithValue("@c_userid", (object?)model.UserId ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@c_first_name", (object?)model.FirstName ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@c_last_name", (object?)model.LastName ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@c_email", (object?)model.Email ?? DBNull.Value);
@@ -313,14 +314,14 @@ namespace Repositories.Implementations
                 const string checkQuery = "SELECT c_password FROM ttp.t_user WHERE c_userid = @c_userid";
                 const string updateQuery = "UPDATE ttp.t_user SET c_password = @c_password WHERE c_userid = @c_userid";
 
-                if (_con.State == System.Data.ConnectionState.Open)
+                if (_con.State == ConnectionState.Open)
                     await _con.CloseAsync();
 
                 await _con.OpenAsync();
 
                 await using (var checkCmd = new NpgsqlCommand(checkQuery, _con))
                 {
-                    checkCmd.Parameters.AddWithValue("@c_userid", model.UserId);
+                    checkCmd.Parameters.AddWithValue("@c_userid", (object?)model.UserId ?? DBNull.Value);
 
                     await using (var reader = await checkCmd.ExecuteReaderAsync())
                     {
@@ -338,7 +339,7 @@ namespace Repositories.Implementations
                 await using (var updateCmd = new NpgsqlCommand(updateQuery, _con))
                 {
                     updateCmd.Parameters.AddWithValue("@c_password", model.NewPassword ?? (object)DBNull.Value);
-                    updateCmd.Parameters.AddWithValue("@c_userid", model.UserId);
+                    updateCmd.Parameters.AddWithValue("@c_userid",  (object?)model.UserId ?? DBNull.Value);
 
                     int rowsAffected = await updateCmd.ExecuteNonQueryAsync();
                     return rowsAffected > 0 ? 1 : 0;
