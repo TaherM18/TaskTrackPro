@@ -8,6 +8,39 @@
 <div id="alert"></div>
 
 <div class="container mt-4">
+    
+    <div class="row mb-3 justify-content-between">
+        <div class="col-8">
+            <button id="btnAdd" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add Task
+            </button>
+        </div>
+        <div class="col-4">
+            <form id="searchForm" class="d-flex flex-row gap-2">
+                <div>
+                    <input type="search" id="txtSearch" class="form-control" placeholder="search query" required />
+                </div>
+                <div>
+                    <button type="submit" id="btnSearch" class="btn btn-secondary">
+                        <i class="fas fa-search me-2"></i>Search
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Replace the existing table with this tree view structure -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Tasks by Employee</h5>
+        </div>
+        <div class="card-body p-0">
+            <div id="taskTreeView" class="accordion">
+                <!-- Will be populated dynamically -->
+            </div>
+        </div>
+    </div>
+
     <!-- Add this modal form after your table -->
     <div class="modal fade" id="taskModal" tabindex="-1" aria-labelledby="taskModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -72,23 +105,6 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" id="btnSaveTask">Save Task</button>
                 </div>
-            </div>
-        </div>
-    </div>
-    <div class="mb-3">
-        <button id="btnAdd" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Add Task
-        </button>
-    </div>
-
-    <!-- Replace the existing table with this tree view structure -->
-    <div class="card">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Tasks by Employee</h5>
-        </div>
-        <div class="card-body p-0">
-            <div id="taskTreeView" class="accordion">
-                <!-- Will be populated dynamically -->
             </div>
         </div>
     </div>
@@ -163,8 +179,8 @@
                                                     <div class="list-group-item">
                                                         <div class="d-flex justify-content-between align-items-center">
                                                             <div>
-                                                                <h6 class="mb-1">${task.title}</h6>
-                                                                <p class="text-muted small mb-1">${task.description || 'No description'}</p>
+                                                                <h6 class="mb-2">${task.title}</h6>
+                                                                <p class="text-muted small mb-2">${task.description || 'No description'}</p>
                                                                 <div class="small">
                                                                     <span class="me-3">
                                                                         <i class="fas fa-calendar me-1"></i>
@@ -207,6 +223,116 @@
                 error: function (error) {
                     $('#alert').removeClass().addClass('alert alert-danger')
                         .text('Error loading task data: ' + error.statusText).show();
+                    setTimeout(function() {
+                        $('#alert').hide();
+                    }, 2000);
+                }
+            });
+        }
+
+        // function to search tasks
+        function searchTasks(query) {
+            $("#btnSearch").prop("disabled", true).html(`<i class="fas fa-search me-2"></i>Searching...`);
+
+            $.ajax({
+                url: `${baseUrl}/search/${query}`,
+                type: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    $('#taskTreeView').empty();
+                    
+                    if (response.data) {
+                        // Group tasks by user
+                        const tasksByUser = {};
+                        response.data.forEach(task => {
+                            if (!tasksByUser[task.user.userId]) {
+                                tasksByUser[task.user.userId] = {
+                                    user: task.user,
+                                    tasks: []
+                                };
+                            }
+                            tasksByUser[task.user.userId].tasks.push(task);
+                        });
+
+                        console.log(tasksByUser);
+
+                        // Render grouped tasks
+                        Object.values(tasksByUser).forEach((group, index) => {
+                            const user = group.user;
+                            const tasks = group.tasks;
+                            const accordionId = `accordion-${user.userId}`;
+                            
+                            $('#taskTreeView').append(`
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" 
+                                                type="button" 
+                                                data-bs-toggle="collapse" 
+                                                data-bs-target="#${accordionId}">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-user me-2"></i>
+                                                <span>${user.firstName} ${user.lastName}</span>
+                                                <span class="badge bg-primary rounded-pill ms-2">${tasks.length}</span>
+                                            </div>
+                                        </button>
+                                    </h2>
+                                    <div id="${accordionId}" 
+                                         class="accordion-collapse collapse ${index === 0 ? 'show' : ''}"
+                                         data-bs-parent="#taskTreeView">
+                                        <div class="accordion-body p-0">
+                                            <div class="list-group list-group-flush">
+                                                ${tasks.map(task => `
+                                                    <div class="list-group-item">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <h6 class="mb-2">${task.title}</h6>
+                                                                <p class="text-muted small mb-2">${task.description || 'No description'}</p>
+                                                                <div class="small">
+                                                                    <span class="me-3">
+                                                                        <i class="fas fa-calendar me-1"></i>
+                                                                        ${new Date(task.startDate).toDateString()}
+                                                                        ${task.endDate ? ' - ' + new Date(task.endDate).toDateString() : ''}
+                                                                    </span>
+                                                                    <span class="me-3">
+                                                                        <i class="fas fa-clock me-1"></i>
+                                                                        ${task.estimatedDays || 0} days
+                                                                    </span>
+                                                                    <span class="badge ${getStatusClass(task.status)}">${task.status}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="btn-group btn-group-sm">
+                                                                <button class="btn btn-outline-primary btn-edit" data-id="${task.taskId}">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </button>
+                                                                <button class="btn btn-outline-danger btn-delete" data-id="${task.taskId}">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `);
+                        });
+                    } else {
+                        $('#taskTreeView').html(`
+                            <div class="text-center p-4 text-muted">
+                                <i class="fas fa-tasks fa-2x mb-3"></i>
+                                <p class="mb-0">No tasks found</p>
+                            </div>
+                        `);
+                    }
+
+                    $("#btnSearch").prop("disabled", false).html(`<i class="fas fa-search me-2"></i>Search`);
+                },
+                error: function (xhr) {
+                    $("#btnSearch").prop("disabled", false).html(`<i class="fas fa-search me-2"></i>Search`);
+
+                    $('#alert').removeClass().addClass('alert alert-danger')
+                        .text(xhr.responseJSON.message).show();
                     setTimeout(function() {
                         $('#alert').hide();
                     }, 2000);
@@ -451,6 +577,11 @@
             // Event Listeners for Start and End Date Changes
             $('#startDate, #endDate').on('change', function () {
                 calculateEstimatedDays();
+            });
+
+            $('#searchForm').on('submit', function(e) {
+                e.preventDefault();
+                searchTasks($("#txtSearch").val());
             });
 
         });
