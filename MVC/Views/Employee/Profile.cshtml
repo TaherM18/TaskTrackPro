@@ -15,7 +15,7 @@
             <div class="card mb-4 mb-xl-0">
                 <div class="card-header">Profile Picture</div>
                 <div class="card-body text-center">
-                    <img class="rounded-circle mb-2 object-fit-scale border"
+                    <img id="preview" class="rounded-circle mb-2 object-fit-cover border"
                         src="/profile_images" onerror="this.src='/profile_images/placeholder.jpg'"
                         alt="Profile Image" width="150" height="150">
                     <div class="small font-italic text-muted mb-4">JPG or PNG no larger than 5 MB</div>
@@ -29,24 +29,28 @@
                 <div class="card-body">
                     <form id="profileForm">
 
+                        <input type="hidden" name="password" value="password"/>
+                        <input type="hidden" name="image" value="password"/>
                         <div class="mb-3">
+                            <label class="small mb-1" for="firstName">Full Name</label>
                             <div class="input-group">
-                                <input type="text" id="txtFirstName" class="form-control" placeholder="Firstname" aria-label="Firstname">
-                                <input type="text" id="txtLastName" class="form-control" placeholder="Lastname" aria-label="Lastname">
+                                <input type="text" id="firstName" name="firstName" class="form-control" placeholder="Firstname" aria-label="Firstname">
+                                <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Lastname" aria-label="Lastname">
                             </div>
-                            <span id="nameError" class="text-danger"></span>
+                            <span id="msg-firstName" class="text-danger"></span>
+                            <span id="msg-lastName" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label class="small mb-1" for="txtEmail">Email Address</label>
-                            <input class="form-control" id="txtEmail" type="email"
+                            <label class="small mb-1" for="email">Email Address</label>
+                            <input class="form-control" id="email" name="email" type="email"
                                 placeholder="Enter your email address">
-                            <span id="emailError" class="text-danger"></span>
+                            <span id="msg-email" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">
                             <label class="small mb-1" for="imageFile">Profile Image</label>
-                            <input type="file" id="imageFile" class="form-control">
+                            <input type="file" id="imageFile" name="imageFile" class="form-control">
                         </div>
 
                         <div class="row">
@@ -54,7 +58,7 @@
                                 <button class="btn btn-primary mt-3" type="submit">Save Changes</button>
                             </div>
                             <div class="col-sm-6">
-                                <a class="btn btn-dark mt-3" href="@Url.Action("ChangePass", "User")">Change Password</a>
+                                <a class="btn btn-dark mt-3" href="@Url.Action("ChangePass", "Auth")">Change Password</a>
                             </div>
                         </div>
                         
@@ -79,14 +83,71 @@
                 method: "GET",
                 success: function (response) {
                     let data = response.data;
-                    $("#txtFirstName").val(data.firstName);
-                    $("#txtLastName").val(data.lastName);
-                    $("#txtEmail").val(data.email);
+                    $("#firstName").val(data.firstName);
+                    $("#lastName").val(data.lastName);
+                    $("#email").val(data.email);
+                    $("input[name='image']").val(data.image);
+                    $("#preview").attr("src", "/profile_images/" + data.image);
                 },
                 error: function (xhr, status, error) {
                     console.log(status, xhr);
                 }
             });
         }
+
+        function handleFormSubmit() {
+            let formData = new FormData($("#profileForm")[0]);
+            formData.append("userId", user.userId);
+            $.ajax({
+                url: `${baseUrl}`,
+                method: "PUT",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    let updatedUser = response.data;
+                    user.firstName = updatedUser.firstName;
+                    user.lastName = updatedUser.lastName;
+                    user.email = updatedUser.email;
+                    user.image = updatedUser.image;
+                    sessionStorage.setItem("user", JSON.stringify(user));
+                    setProfileDiv();
+                    //
+                    Swal.fire({
+                        title: "Profile Updated!",
+                        icon: "success",
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                },
+                error: function(xhr, status, error) {
+                    Swal.fire({
+                        title: "Oops",
+                        text: error,
+                        icon: "error",
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            });
+        }
+        //
+        $(document).ready(function() {
+            loadUserData();
+
+            $("#profileForm").submit(function(e) {
+                e.preventDefault();
+                handleFormSubmit();
+            });
+
+            $("#imageFile").change(function() {
+                let file = this.files[0];
+                let reader = new FileReader(file);
+                reader.onload = function(e) {
+                    $("#preview").attr("src", e.target.result);
+                }
+                reader.readAsDataURL(file);
+            });
+        });
     </script>
 }

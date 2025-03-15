@@ -7,7 +7,6 @@ namespace Repositories.Models
     {
         public Guid? UserId { get; set; }
 
-        [Required(ErrorMessage = "Role is required")]
         public char Role { get; set; } = 'E';
 
         [Required(ErrorMessage = "First name is required")]

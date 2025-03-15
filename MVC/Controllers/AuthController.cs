@@ -31,6 +31,14 @@ namespace MVC.Controllers
         }
         #endregion
 
+        #region Get: ChangePass
+        [HttpGet]
+        public IActionResult ChangePass()
+        {
+            return View();
+        }
+        #endregion
+
         #region Get: Logout
         [HttpGet]
         public IActionResult Logout()

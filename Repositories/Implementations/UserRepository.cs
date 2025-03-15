@@ -268,9 +268,6 @@ namespace Repositories.Implementations
             SET c_first_name = @c_first_name,
                 c_last_name = @c_last_name,
                 c_email = @c_email,
-                c_address = @c_address,
-                c_contact = @c_contact,
-                c_gender = @c_gender,
                 c_image = @c_image
             WHERE c_userid = @c_userid";
 
@@ -285,9 +282,6 @@ namespace Repositories.Implementations
                     cmd.Parameters.AddWithValue("@c_first_name", (object?)model.FirstName ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@c_last_name", (object?)model.LastName ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@c_email", (object?)model.Email ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@c_address", (object?)model.Address ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@c_contact", (object?)model.Contact ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@c_gender", (object?)model.Gender ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@c_image", (object?)model.Image ?? DBNull.Value);
 
                     await _con.OpenAsync();

@@ -129,7 +129,7 @@ namespace API.Controllers
             if (result == 0)
                 return BadRequest(new { message = "Update failed" });
 
-            return Ok(new { message = "Update successful" });
+            return Ok(new { message = "Update successful", data = model });
         }
         #endregion
 
