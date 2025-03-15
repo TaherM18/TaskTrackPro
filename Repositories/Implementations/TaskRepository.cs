@@ -1,3 +1,4 @@
+using System;
 using System.Data;
 using Npgsql;
 using NpgsqlTypes;
@@ -17,12 +18,17 @@ namespace Repositories.Implementations
         #region Add
         public async Task<int> Add(Models.Task model)
         {
+            Console.WriteLine(model);
+
             string query = @"
             INSERT INTO ttp.t_task (c_userid, c_title, c_description, c_estimated_days, c_start_date, c_end_date, c_status)
             VALUES (@c_userid, @c_title, @c_description, @c_estimated_days, @c_start_date, @c_end_date, @c_status)";
 
             try
             {
+                if (_con.State == System.Data.ConnectionState.Open)
+                    await _con.CloseAsync();
+
                 using (NpgsqlCommand cmd = new NpgsqlCommand(query, _con))
                 {
                     cmd.Parameters.AddWithValue("@c_userid", NpgsqlDbType.Uuid, model.UserId);
@@ -57,6 +63,9 @@ namespace Repositories.Implementations
 
             try
             {
+                if (_con.State == System.Data.ConnectionState.Open)
+                    await _con.CloseAsync();
+
                 using (NpgsqlCommand cmd = new NpgsqlCommand(query, _con))
                 {
                     cmd.Parameters.AddWithValue("@c_taskid", Guid.Parse(id));
@@ -92,9 +101,13 @@ namespace Repositories.Implementations
 
             try
             {
+                if (_con.State == System.Data.ConnectionState.Open)
+                    await _con.CloseAsync();
+
                 using (NpgsqlCommand cmd = new NpgsqlCommand(query, _con))
                 {
                     await _con.OpenAsync();
+
                     using (var reader = await cmd.ExecuteReaderAsync())
                     {
                         while (reader.Read())
@@ -161,10 +174,15 @@ namespace Repositories.Implementations
 
             try
             {
+                if (_con.State == System.Data.ConnectionState.Open)
+                    await _con.CloseAsync();
+
                 using (NpgsqlCommand cmd = new NpgsqlCommand(query, _con))
                 {
-                    cmd.Parameters.AddWithValue("@c_userid", Guid.Parse(id));
                     await _con.OpenAsync();
+
+                    cmd.Parameters.AddWithValue("@c_userid", Guid.Parse(id));
+                    
                     using (var reader = await cmd.ExecuteReaderAsync())
                     {
                         while (reader.Read())
@@ -229,6 +247,9 @@ namespace Repositories.Implementations
 
             try
             {
+                if (_con.State == System.Data.ConnectionState.Open)
+                    await _con.CloseAsync();
+
                 using (NpgsqlCommand cmd = new NpgsqlCommand(query, _con))
                 {
                     cmd.Parameters.AddWithValue("@c_taskid", Guid.Parse(id));
@@ -302,6 +323,9 @@ namespace Repositories.Implementations
 
             try
             {
+                if (_con.State == System.Data.ConnectionState.Open)
+                    await _con.CloseAsync();
+
                 using (NpgsqlCommand cmd = new NpgsqlCommand(query, _con))
                 {
                     cmd.Parameters.AddWithValue("@c_userid", model.UserId);

@@ -123,15 +123,15 @@
                         <label for="email">Email:</label>
                         <input type="email" class="form-control" id="email" name="email"
                             placeholder="Enter Email" required />
-                        <span id="msg-email" class="text-danger"></span>
+                        <small id="msg-email" class="text-danger"></small>
                     </div>
                     <div class="form-group mt-3">
                         <label for="password">Password:</label>
                         <input type="password" class="form-control" id="password" name="password"
                             placeholder="Enter Password" required />
-                        <span id="msg-password" class="text-danger"></span>
+                        <small id="msg-password" class="text-danger"></small>
                     </div>
-                    <button type="submit" class="btn btn-primary mt-4">Login</button>
+                    <button type="submit" id="btnSubmit" class="btn btn-primary mt-4">Login</button>
                 </form>
                 <div class="signup-text" style="text-align: center; padding: 20px;">
                     <p>Don't have an account? <a href="@Url.Action("Register", "Auth")" style="color: var(--primary-color);">Signup here</a></p>
@@ -150,6 +150,7 @@
     <script>
         function handleFormSubmit() {
             const formData = $('#loginForm').serialize(); // Serialize form data
+            $('#btnSubmit').attr('disabled', true);
 
             $.ajax({
                 url: 'http://localhost:5267/api/user/auth',
@@ -159,6 +160,7 @@
                 success: function (response) {
                     localStorage.setItem("token", response.token);
                     sessionStorage.setItem("user", JSON.stringify(response.data));
+                    $('#btnSubmit').attr('disabled', false);
 
                     Swal.fire({
                         title: "Login Successful!",
@@ -180,9 +182,7 @@
                     });
                 },
                 error: function (xhr, status, error) {
-                    console.log("xhr:",xhr);
-                    console.log("status:",status);
-                    console.log("error:",error);
+                    $('#btnSubmit').attr('disabled', false);
 
                     const message = xhr.responseJSON?.message || "Login failed. Please try again.";
                     Swal.fire({

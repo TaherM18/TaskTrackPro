@@ -124,7 +124,7 @@ namespace API.Controllers
 
         #region Post: Create
         [HttpPost]
-        public async Task<IActionResult> Create([FromForm] Repositories.Models.Task model)
+        public async Task<IActionResult> Create(Repositories.Models.Task model)
         {
             int affectedRows = await _taskRepo.Add(model);
             if (affectedRows <= 0)

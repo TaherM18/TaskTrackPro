@@ -8,26 +8,28 @@ namespace Repositories.Implementations
 {
     public class ChatRepository : IChatInterface
     {
-        private readonly NpgsqlConnection _connection;
+        private readonly NpgsqlConnection _con;
 
         public ChatRepository(NpgsqlConnection connection)
         {
-            _connection = connection;
+            _con = connection;
         }
 
         #region SaveChat
         public async Task<int> SaveChat(Chat chat)
         {
             string query = @"
-            INSERT INTO api.t_Chat (c_SenderId, c_ReceiverId, c_Message, c_Timestamp, c_IsRead) 
+            INSERT INTO ttp.t_Chat (c_SenderId, c_ReceiverId, c_Message, c_Timestamp, c_IsRead) 
             VALUES (@SenderId, @ReceiverId, @Message, @Timestamp, @IsRead) RETURNING c_ChatId";
 
             try
             {
-                await using var cmd = new NpgsqlCommand(query, _connection);
+                await using var cmd = new NpgsqlCommand(query, _con);
 
-                await _connection.CloseAsync();
-                await _connection.OpenAsync();
+                if (_con.State == System.Data.ConnectionState.Open)
+                    await _con.CloseAsync();
+
+                await _con.OpenAsync();
 
                 cmd.Parameters.AddWithValue("@SenderId", chat.SenderId);
                 cmd.Parameters.AddWithValue("@ReceiverId", chat.ReceiverId);
@@ -44,27 +46,29 @@ namespace Repositories.Implementations
             }
             finally
             {
-                await _connection.CloseAsync();
+                await _con.CloseAsync();
             }
         }
         #endregion
 
 
         #region GetChatHistory
-        public async Task<List<Chat>?> GetChatHistory(int senderId, int receiverId)
+        public async Task<List<Chat>?> GetChatHistory(string senderId, string receiverId)
         {
             List<Chat> chatList = new List<Chat>();
 
-            string query = "SELECT * FROM api.t_Chat WHERE " +
+            string query = "SELECT * FROM ttp.t_Chat WHERE " +
                            "(c_SenderId = @SenderId AND c_ReceiverId = @ReceiverId) " +
                            "OR (c_SenderId = @ReceiverId AND c_ReceiverId = @SenderId) " +
                            "ORDER BY c_Timestamp ASC";
             try
             {
-                await using var cmd = new NpgsqlCommand(query, _connection);
+                await using var cmd = new NpgsqlCommand(query, _con);
 
-                await _connection.CloseAsync();
-                await _connection.OpenAsync();
+                if (_con.State == System.Data.ConnectionState.Open)
+                    await _con.CloseAsync();
+
+                await _con.OpenAsync();
 
                 cmd.Parameters.AddWithValue("@SenderId", senderId);
                 cmd.Parameters.AddWithValue("@ReceiverId", receiverId);
@@ -92,7 +96,7 @@ namespace Repositories.Implementations
             }
             finally
             {
-                await _connection.CloseAsync();
+                await _con.CloseAsync();
             }
         }
         #endregion
@@ -101,14 +105,16 @@ namespace Repositories.Implementations
         #region MarkChatAsRead
         public async Task<int> MarkChatAsRead(int chatId)
         {
-            string query = "UPDATE api.t_Chat SET c_IsRead = TRUE WHERE c_ChatId = @ChatId";
+            string query = "UPDATE ttp.t_Chat SET c_IsRead = TRUE WHERE c_ChatId = @ChatId";
 
             try
             {
-                await using var cmd = new NpgsqlCommand(query, _connection);
+                await using var cmd = new NpgsqlCommand(query, _con);
 
-                await _connection.CloseAsync();
-                await _connection.OpenAsync();
+                if (_con.State == System.Data.ConnectionState.Open)
+                    await _con.CloseAsync();
+
+                await _con.OpenAsync();
 
                 cmd.Parameters.AddWithValue("@ChatId", chatId);
 
@@ -122,7 +128,7 @@ namespace Repositories.Implementations
             }
             finally
             {
-                await _connection.CloseAsync();
+                await _con.CloseAsync();
             }
         }
         #endregion
