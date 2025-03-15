@@ -61,6 +61,107 @@ function setProfileDiv() {
     $("#profileMenu").html(htmlContent);
 }
 
+function updateNotificationList(notifications) {
+    const notificationList = $("#notificationList");
+    notificationList.empty();
+    
+    if (notifications.length === 0) {
+        notificationList.append(`
+            <div class="p-3 text-center text-muted">
+                No notifications
+            </div>
+        `);
+        return;
+    }
+
+    notifications.forEach(notification => {
+        const html = `
+            <div class="notification-item ${notification.isRead ? '' : 'unread'}" data-id="${notification.id}">
+                <div class="d-flex align-items-center">
+                    <div class="notification-icon ${notification.type}">
+                        <i class="fas ${getNotificationIcon(notification.type)}"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="notification-title">${notification.title}</div>
+                        <div class="notification-desc">${notification.description}</div>
+                        <div class="notification-time">
+                            <i class="far fa-clock"></i> ${formatTimeAgo(notification.createdAt)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        notificationList.append(html);
+    });
+
+    // Update badge count
+    const unreadCount = notifications.filter(n => !n.isRead).length;
+    $("#notificationCount").text(unreadCount);
+    if (unreadCount === 0) {
+        $("#notificationCount").hide();
+    } else {
+        $("#notificationCount").show();
+    }
+}
+
+function getNotificationIcon(type) {
+    switch (type) {
+        case 'task':
+            return 'fa-tasks';
+        case 'message':
+            return 'fa-envelope';
+        case 'alert':
+            return 'fa-exclamation-triangle';
+        default:
+            return 'fa-bell';
+    }
+}
+
+function formatTimeAgo(date) {
+    const now = new Date();
+    const diff = now - new Date(date);
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (days > 0) return `${days}d ago`;
+    if (hours > 0) return `${hours}h ago`;
+    if (minutes > 0) return `${minutes}m ago`;
+    return 'Just now';
+}
+
+function markAllAsRead() {
+    // API call to mark all as read
+    // Then refresh notifications
+}
+
+// Example usage:
+$(document).ready(function() {
+    // Sample data - replace with your API call
+    const sampleNotifications = [
+        {
+            id: 1,
+            type: 'task',
+            title: 'New Task Assigned',
+            description: 'You have been assigned a new task: Project Review',
+            createdAt: new Date(Date.now() - 30000),
+            isRead: false
+        },
+        {
+            id: 2,
+            type: 'message',
+            title: 'New Message',
+            description: 'John sent you a message regarding the project',
+            createdAt: new Date(Date.now() - 3600000),
+            isRead: true
+        }
+    ];
+
+    updateNotificationList(sampleNotifications);
+});
+
+// =========================================================================
+
 // Important
 checkIdentityAndAccess();
 //
