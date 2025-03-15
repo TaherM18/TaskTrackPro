@@ -42,7 +42,8 @@ namespace Services
 
                 if (!createResponse.ApiCallDetails.HasSuccessfulStatusCode)
                 {
-                    Console.WriteLine($"Failed to create index: {createResponse.DebugInformation}");
+                    // Console.WriteLine($"Failed to create index: {createResponse.DebugInformation}");
+                    Console.WriteLine($"Failed to create index");
                 }
                 else
                 {
@@ -63,7 +64,8 @@ namespace Services
             var response = await _client.IndexAsync(task, idx => idx.Index(_taskIndex));
             if (!response.IsValidResponse)
             {
-                Console.WriteLine($"❌ Error indexing task: {response.DebugInformation}");
+                // Console.WriteLine($"❌ Error indexing task: {response.DebugInformation}");
+                Console.WriteLine($"❌ Error indexing task");
             }
             else
             {
@@ -89,7 +91,7 @@ namespace Services
 
             if (!response.IsValidResponse)
             {
-                Console.WriteLine($"❌ Elasticsearch query failed: {response.DebugInformation}");
+                // Console.WriteLine($"❌ Elasticsearch query failed: {response.DebugInformation}");
                 return new List<Repositories.Models.Task>();
             }
 

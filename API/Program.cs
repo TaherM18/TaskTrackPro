@@ -24,6 +24,15 @@ builder.Services.AddCors(p => p.AddPolicy("corsapp", builder =>
     builder.WithOrigins("*").AllowAnyMethod().AllowAnyHeader();
 }));
 
+// Register RedisService
+builder.Services.AddSingleton<RedisService>();
+
+// Register RabbitMqService as Singleton
+builder.Services.AddSingleton<RabbitMqService>();
+
+// Register RabbitMQ Background Service
+builder.Services.AddHostedService<RabbitMqBackgroundService>();
+
 // Register Repositories
 builder.Services.AddSingleton<IUserInterface, UserRepository>();
 builder.Services.AddSingleton<ITaskInterface, TaskRepository>();
@@ -65,7 +74,7 @@ builder.Services.AddAuthentication(option =>
         ValidateLifetime = false,
         ValidAudience = builder.Configuration["Jwt:Audience"],
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] 
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]
             ?? throw new ArgumentNullException("Jwt:Key is empty")))
     };
 });
@@ -83,7 +92,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement {
-        { 
+        {
             new OpenApiSecurityScheme {
                 Reference = new OpenApiReference {
                     Type = ReferenceType.SecurityScheme,
