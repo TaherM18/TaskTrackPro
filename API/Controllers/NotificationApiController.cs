@@ -20,6 +20,10 @@ namespace API.Controllers
         public async Task<IActionResult> GetAll(Guid userId)
         {
             var notifications = await _notification.GetAllByUserId(userId);
+            if (notifications == null)
+            {
+                return StatusCode(500, new { message = "Failed to get notifications" });
+            }
             return Ok(new { data = notifications });
         }
 
@@ -28,6 +32,10 @@ namespace API.Controllers
         public async Task<IActionResult> GetAllUnread(Guid userId)
         {
             var notifications = await _notification.GetAllUnreadByUserId(userId);
+            if (notifications == null)
+            {
+                return StatusCode(500, new { message = "Failed to get notifications" });
+            }
             return Ok(new { data = notifications });
         }
 
@@ -47,6 +55,10 @@ namespace API.Controllers
         public async Task<IActionResult> MarkAllAsRead(Guid userId)
         {
             var result = await _notification.MarkAllAsRead(userId);
+            if (result == false)
+            {
+                return StatusCode(500, new { message = "Failed to mark all notifications as read" });
+            }
             return Ok(new { message = "All notifications marked as read" });
         }
 
@@ -55,9 +67,13 @@ namespace API.Controllers
         public async Task<IActionResult> Add([FromBody] Notification notification)
         {
             var notificationId = await _notification.Add(notification);
+            if (notificationId <= 0)
+            {
+                return StatusCode(500, new { message = "Failed to create notification" });
+            }
             return Ok(new { 
                 message = "Notification created successfully",
-                notificationId = notificationId
+                notificationId
             });
         }
 

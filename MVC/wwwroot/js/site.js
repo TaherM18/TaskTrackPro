@@ -1,7 +1,6 @@
 ﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
 // for details on configuring this project to bundle and minify static web assets.
 
-// Write your JavaScript code.
 function checkIdentityAndAccess() {
     let user = JSON.parse(sessionStorage.getItem("user"));
     let controller = window.location.href.split("/")[3].toLowerCase();
@@ -61,21 +60,25 @@ function setProfileDiv() {
     $("#profileMenu").html(htmlContent);
 }
 
-//
+// NOTIFCATIONS ============================================================
 
 function loadNotifications() {
     const user = JSON.parse(sessionStorage.getItem("user"));
     if (!user) return;
 
-    $.ajax({
-        url: `http://localhost:5267/api/notification/unread/${user.userId}`,
-        method: 'GET',
-        success: function(response) {
-            updateNotificationList(response.data);
-        },
-        error: function(xhr) {
-            console.error('Error fetching notifications:', xhr);
-        }
+    return new Promise(function(resolve, reject) {
+        $.ajax({
+            url: `http://localhost:5267/api/notification/unread/${user.userId}`,
+            method: 'GET',
+            success: function(response) {
+                resolve();
+                updateNotificationList(response.data);
+            },
+            error: function(xhr) {
+                console.error('Error fetching notifications:', xhr);
+                reject();
+            }
+        });
     });
 }
 
@@ -112,12 +115,13 @@ function updateNotificationList(notifications) {
     const notificationList = $("#notificationList");
     notificationList.empty();
     
-    if (notifications.length === 0) {
+    if (!notifications || notifications.length === 0) {
         notificationList.append(`
             <div class="p-3 text-center text-muted">
                 No notifications
             </div>
         `);
+        $("#notificationCount").hide();
         return;
     }
 
@@ -143,14 +147,9 @@ function updateNotificationList(notifications) {
         notificationList.append(html);
     });
 
-    // Update badge count
-    const unreadCount = notifications.length;
-    $("#notificationCount").text(unreadCount);
-    if (unreadCount === 0) {
-        $("#notificationCount").hide();
-    } else {
-        $("#notificationCount").show();
-    }
+    // Update badge count    
+    $("#notificationCount").text(notifications.length).show();
+    
 }
 
 function getNotificationIcon(type) {
@@ -179,15 +178,107 @@ function formatTimeAgo(date) {
     return 'Just now';
 }
 
-function markAllAsRead() {
-    // API call to mark all as read
-    // Then refresh notifications
+// CHAT MESSAGES ==========================================================
+
+function loadUnreadMessages() {
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    if (!user) return;
+
+    $.ajax({
+        url: `http://localhost:5267/api/chat/unread/${user.userId}`,
+        method: 'GET',
+        success: function(response) {
+            updateMessageList(response.data);
+        },
+        error: function(xhr) {
+            console.error('Error fetching messages:', xhr);
+        }
+    });
 }
 
-// usage:
+function updateMessageList(messages) {
+    const messageList = $("#messageList");
+    messageList.empty();
+    
+    if (!messages || messages.length === 0) {
+        messageList.append(`
+            <div class="p-3 text-center text-muted">
+                <i class="fas fa-inbox fa-2x mb-2"></i>
+                <div>No new messages</div>
+            </div>
+        `);
+        $("#messageCount").hide();
+        return;
+    }
+
+    messages.forEach(msg => {
+        const html = `
+            <div class="message-item unread">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1 pe-2" onclick="goToChat('${msg.senderId}')">
+                        <div class="message-sender">
+                            <i class="fas fa-user-circle me-1"></i>
+                            ${msg.senderName || 'User'}
+                        </div>
+                        <div class="message-preview">${msg.message}</div>
+                        <div class="message-time">
+                            <i class="far fa-clock me-1"></i>${formatTimeAgo(msg.timestamp)}
+                        </div>
+                    </div>
+                    <button class="btn btn-sm text-primary mark-read-btn" 
+                            onclick="event.stopPropagation(); markChatAsRead(${msg.chatId}, this)" 
+                            title="Mark as read">
+                        <i class="fas fa-check"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        messageList.append(html);
+    });
+
+    $("#messageCount").text(messages.length).show();
+}
+
+function markChatAsRead(chatId, button) {
+    $.ajax({
+        url: `http://localhost:5267/api/chat/mark-read/${chatId}`,
+        method: 'PUT',
+        success: function() {
+            $(button).closest('.message-item').fadeOut(300, function() {
+                $(this).remove();
+                const remainingMessages = $('.message-item').length;
+                $("#messageCount").text(remainingMessages);
+                if (remainingMessages === 0) {
+                    $("#messageCount").hide();
+                    $("#messageList").html(`
+                        <div class="p-3 text-center text-muted">
+                            No new messages
+                        </div>
+                    `);
+                }
+            });
+        },
+        error: function(xhr) {
+            console.error('Error marking message as read:', xhr);
+        }
+    });
+}
+
+function goToChat(senderId) {
+    window.location.href = `/Chats?userId=${senderId}`;
+}
+
+// DOCUMENT READY FUCNTION ==============================================
+
 $(document).ready(function() {  
-    // Load notifications initially
-    loadNotifications();
+    loadNotifications()
+        .then(function() {
+            loadUnreadMessages();
+        })
+        .catch(function() {
+            loadUnreadMessages();
+        });
+    
     
     // Refresh notifications every 30 seconds
     setInterval(loadNotifications, 30000);
@@ -199,7 +290,7 @@ $(document).ready(function() {
     });
 });
 
-// =========================================================================
+// ========================================================================
 
 // Important
 checkIdentityAndAccess();

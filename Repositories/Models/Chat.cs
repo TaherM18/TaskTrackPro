@@ -20,5 +20,8 @@ namespace Repositories.Models
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
         public bool IsRead { get; set; } = false;
+
+        public string? SenderName { get; set; }
+        public string? ReceiverName { get; set; }
     }
 }

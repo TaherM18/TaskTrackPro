@@ -34,7 +34,7 @@ namespace Services
                             .Date(d => d.StartDate)
                             .Date(d => d.EndDate ?? DateOnly.FromDateTime(DateTime.UtcNow))
                             .IntegerNumber(n => n.EstimatedDays ?? 0)  // Default to 0 if null
-                            .Keyword(k => k.TaskId)
+                            .Keyword(k => (object?)k.TaskId ?? string.Empty)
                             .Keyword(k => k.UserId)
                         )
                     )

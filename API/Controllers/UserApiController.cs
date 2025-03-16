@@ -105,7 +105,7 @@ namespace API.Controllers
                 model.Image = await _fileHelper.UploadFile(_profileImagePath, model.ImageFile, model.Image);
             }
             
-            var result = await _user.Add(model);
+            var result = await _user.Add(model ?? throw new NullReferenceException("User object is null"));
             if (result == -1)
                 return BadRequest(new { message = "Email already exists" });
             if (result == 0)
@@ -125,7 +125,7 @@ namespace API.Controllers
             {
                 model.Image = await _fileHelper.UploadFile(_profileImagePath, model.ImageFile, model.Image);
             }
-            var result = await _user.Update(model);
+            var result = await _user.Update(model ?? throw new NullReferenceException("User object is null"));
             if (result == 0)
                 return BadRequest(new { message = "Update failed" });
 
