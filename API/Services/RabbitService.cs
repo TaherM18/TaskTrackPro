@@ -52,7 +52,7 @@ namespace Services
             {
                 var body = ea.Body.ToArray();
                 var message = Encoding.UTF8.GetString(body);
-                string b = message;
+                string b = await _redis.GetStringAsync("Notifications") + message;
                 await _redis.SetStringAsync("Notifications", b);
                 Console.WriteLine($" [x] Received {message}");
                 // return System.Threading.Tasks.Task.CompletedTask;

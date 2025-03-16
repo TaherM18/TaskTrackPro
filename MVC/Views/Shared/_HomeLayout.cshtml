@@ -6,12 +6,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - TMS</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
 </head>
 
 <body>
+
+    @section Styles {
+        <style>
+            /* Hide dropdown arrow */
+            .dropdown-toggle::after {
+                display: none !important;
+            }
+        </style>
+    }
+
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
@@ -29,9 +42,57 @@
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home"
                                 asp-action="Privacy">Privacy</a>
                         </li>
+
+
+
+
+                </div>
+                </ul>
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle position-relative caret-none" data-bs-toggle="dropdown"
+                        aria-expanded="false" style="text-decoration: none;">
+                        <i class="fas fa-envelope fs-5"></i>
+                        <span
+                            class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle">9</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end p-2 shadow" style="width: 300px;">
+                        <li>
+                            <h6 class="dropdown-header text-center">Notifications</h6>
+                        </li>
+                        <li>
+                            <div class="list-group">
+                                <a href="#"
+                                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Title 1</strong>
+                                        <p class="mb-0 text-muted small">This is a short description of the
+                                            notification.</p>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-success">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
+                                </a>
+                                <a href="#"
+                                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Title 2</strong>
+                                        <p class="mb-0 text-muted small">Another short notification description.
+                                        </p>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-success">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="text-center mt-2">
+                                <a href="#" class="text-primary small">View All Notifications</a>
+                            </div>
+                        </li>
                     </ul>
                 </div>
-                <div id="profileMenu"> 
+                <div id="profileMenu">
                 </div>
             </div>
         </nav>

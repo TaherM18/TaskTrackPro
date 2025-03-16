@@ -22,16 +22,27 @@ namespace API.Controllers
         }
 
         [HttpPost]
-        public async Task<int> SaveNotification(Notification notification)
+        public async Task<IActionResult> SaveNotification(Notification notification)
         {
-            await _noti.Add(notification);
-            return await _rabbitMqService.SendMessage(notification);
+            if (await _noti.Add(notification) > 1)
+            {
+                return Ok(await _rabbitMqService.SendMessage(notification));
+
+            }
+            else
+            {
+                return BadRequest(new
+                {
+                    message = "Something went wrong",
+                    data = notification
+                });
+            }
         }
 
         [HttpGet]
-        public async Task<string> GetNotification()
+        public async Task<IActionResult> GetNotification()
         {
-            return await _redis.GetStringAsync("Notifications");
+            return Ok(await _redis.GetStringAsync("Notifications"));
         }
 
         [HttpGet]
