@@ -68,7 +68,7 @@ function loadNotifications() {
     if (!user) return;
 
     $.ajax({
-        url: `http://localhost:5267/api/notification/${user.userId}`,
+        url: `http://localhost:5267/api/notification/unread/${user.userId}`,
         method: 'GET',
         success: function(response) {
             updateNotificationList(response.data);
@@ -144,7 +144,7 @@ function updateNotificationList(notifications) {
     });
 
     // Update badge count
-    const unreadCount = notifications.filter(n => !n.isRead).length;
+    const unreadCount = notifications.length;
     $("#notificationCount").text(unreadCount);
     if (unreadCount === 0) {
         $("#notificationCount").hide();

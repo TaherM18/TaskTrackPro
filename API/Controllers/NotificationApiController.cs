@@ -15,6 +15,7 @@ namespace API.Controllers
             _notification = notification;
         }
 
+
         [HttpGet("{userId}")]
         public async Task<IActionResult> GetAll(Guid userId)
         {
@@ -22,12 +23,14 @@ namespace API.Controllers
             return Ok(new { data = notifications });
         }
 
-        [HttpGet("unread-count/{userId}")]
-        public async Task<IActionResult> GetUnreadCount(Guid userId)
+
+        [HttpGet("unread/{userId}")]
+        public async Task<IActionResult> GetAllUnread(Guid userId)
         {
-            var count = await _notification.GetUnreadCount(userId);
-            return Ok(new { count });
+            var notifications = await _notification.GetAllUnreadByUserId(userId);
+            return Ok(new { data = notifications });
         }
+
 
         [HttpPut("mark-read/{notificationId}")]
         public async Task<IActionResult> MarkAsRead(int notificationId)
@@ -39,12 +42,14 @@ namespace API.Controllers
             return Ok(new { message = "Notification marked as read" });
         }
 
+
         [HttpPut("mark-all-read/{userId}")]
         public async Task<IActionResult> MarkAllAsRead(Guid userId)
         {
             var result = await _notification.MarkAllAsRead(userId);
             return Ok(new { message = "All notifications marked as read" });
         }
+
 
         [HttpPost]
         public async Task<IActionResult> Add([FromBody] Notification notification)
@@ -55,5 +60,6 @@ namespace API.Controllers
                 notificationId = notificationId
             });
         }
+
     }
 }

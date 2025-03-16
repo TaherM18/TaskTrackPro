@@ -150,7 +150,7 @@
     <script>
         function handleFormSubmit() {
             const formData = $('#loginForm').serialize(); // Serialize form data
-            $('#btnSubmit').attr('disabled', true);
+            $('#btnSubmit').attr('disabled', true).text("Authenticating...");
 
             $.ajax({
                 url: 'http://localhost:5267/api/user/auth',
@@ -160,7 +160,7 @@
                 success: function (response) {
                     localStorage.setItem("token", response.token);
                     sessionStorage.setItem("user", JSON.stringify(response.data));
-                    $('#btnSubmit').attr('disabled', false);
+                    $('#btnSubmit').attr('disabled', false).text("Login");
 
                     Swal.fire({
                         title: "Login Successful!",
@@ -182,7 +182,7 @@
                     });
                 },
                 error: function (xhr, status, error) {
-                    $('#btnSubmit').attr('disabled', false);
+                    $('#btnSubmit').attr('disabled', false).text("Login");
 
                     const message = xhr.responseJSON?.message || "Login failed. Please try again.";
                     Swal.fire({

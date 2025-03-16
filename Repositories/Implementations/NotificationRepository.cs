@@ -20,7 +20,7 @@ namespace Repositories.Implementations
             var query = @"
                 SELECT c_notificationid, c_userid, c_title, c_description, c_type, c_isread, c_created_at 
                 FROM ttp.t_notification 
-                WHERE c_userid = @userId 
+                WHERE c_userid = @userId
                 ORDER BY c_created_at DESC";
             try
             {
@@ -59,23 +59,43 @@ namespace Repositories.Implementations
         #endregion
 
 
-        #region GetUnreadCount
-        public async Task<int> GetUnreadCount(Guid userId)
+        #region GetAllByUnreadUserId
+        public async Task<List<Notification>?> GetAllUnreadByUserId(Guid userId)
         {
-            var query = "SELECT COUNT(*) FROM ttp.t_notification WHERE c_userid = @userId AND c_isread = false";
-
+            var notifications = new List<Notification>();
+            var query = @"
+                SELECT c_notificationid, c_userid, c_title, c_description, c_type, c_isread, c_created_at 
+                FROM ttp.t_notification 
+                WHERE c_userid = @userId AND c_isread = false
+                ORDER BY c_created_at DESC";
             try
             {
+
                 await _con.OpenAsync();
                 using var cmd = new NpgsqlCommand(query, _con);
                 cmd.Parameters.AddWithValue("@userId", userId);
 
-                return Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    notifications.Add(new Notification
+                    {
+                        NotificationId = reader.GetInt32(0),
+                        UserId = reader.GetGuid(1),
+                        Title = reader.GetString(2),
+                        Description = reader.GetString(3),
+                        Type = reader.GetString(4),
+                        IsRead = reader.GetBoolean(5),
+                        CreatedAt = reader.GetDateTime(6)
+                    });
+                }
+
+                return notifications;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"NotificationRepository - GetUnreadCount() - {ex.Message}");
-                return -1;
+                Console.WriteLine($"NotificationRepository - GetAllUnreadByUserId() - {ex.Message}");
+                return null;
             }
             finally
             {
