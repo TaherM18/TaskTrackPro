@@ -197,6 +197,27 @@
             return formData;
         }
 
+        // function to send admin notification
+        function sendAdminNotification(title, description, type = "alert") {
+            return new Promise((resolve, reject) => {
+                const notification = {
+                    userId: "00000000-0000-0000-0000-000000000000", // Admin's userId
+                    title: title,
+                    description: description,
+                    type: type
+                };
+
+                $.ajax({
+                    url: 'http://localhost:5267/api/notification',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(notification),
+                    success: resolve,
+                    error: reject
+                });
+            });
+        }
+
         function handleFormSubmit() {
             const formData = getFormData();
             $.ajax({
@@ -206,13 +227,21 @@
                 processData: false,
                 contentType: false,
                 success: function(response) {
-                    Swal.fire({
-                        title: "Registration Successful!",
-                        text: "Please login to continue",
-                        icon: "success",
-                        confirmButtonColor: "#133E87"
-                    }).then((result) => {
-                        window.location.href = "/Auth/Login";
+                    const fullName = `${$('#firstName').val().trim()} ${$('#lastName').val().trim()}`;
+                    
+                    sendAdminNotification(
+                        "New User Registration",
+                        `${fullName} has registered as an employee.`
+                    ).finally(() => {
+                        // Show success message and redirect regardless of notification status
+                        Swal.fire({
+                            title: "Registration Successful!",
+                            text: "Please login to continue",
+                            icon: "success",
+                            confirmButtonColor: "#133E87"
+                        }).then(() => {
+                            window.location.href = "/Auth/Login";
+                        });
                     });
                 },
                 error: function(xhr) {
