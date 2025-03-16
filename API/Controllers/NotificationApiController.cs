@@ -51,5 +51,12 @@ namespace API.Controllers
         {
             return Ok(await _noti.GetAll());
         }
+
+        [HttpGet]
+        [Route("mark")]
+        public async Task<int> Mark(int id)
+        {
+            return await _noti.Seen(id);
+        }
     }
 }

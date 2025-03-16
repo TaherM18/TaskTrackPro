@@ -7,5 +7,6 @@ namespace Repositories.Interfaces
         public Task<List<Notification>> GetAll();
         public Task<List<Notification>> GetAllByUser(int uid);
         public Task<int> Add(Notification notification);
+        public Task<int> Seen(int id);
     }
 }

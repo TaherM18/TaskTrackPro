@@ -19,11 +19,11 @@ namespace Repositories.Implementations
             try
             {
                 string query = @"
-                INSERT INTO ttp.t_notifications 
+                INSERT INTO ttp.t_notification 
                     (c_title, c_description, c_userid)
                 VALUES
                     (@title, @desc, @uid)
-                RETURNING c_notification_id;";
+                RETURNING c_notificationid;";
 
                 await _con.CloseAsync();
                 await _con.OpenAsync();
@@ -54,7 +54,7 @@ namespace Repositories.Implementations
             List<Notification> notifications = new List<Notification>();
             DataTable dt = new DataTable();
             string query = @"
-                SELECT * FROM ttp.t_notifications
+                SELECT * FROM ttp.t_notification
             ";
             try
             {
@@ -70,7 +70,7 @@ namespace Repositories.Implementations
                         from DataRow row in dt.Rows
                         select new Notification
                         {
-                            NotificationId = Convert.ToInt32(row["c_notification_id"]),
+                            NotificationId = Convert.ToInt32(row["c_notificationid"]),
                             Title = row["c_title"].ToString(),
                             Description = row["c_description"].ToString(),
                             UserId = Convert.ToInt32(row["c_userid"])
@@ -90,7 +90,7 @@ namespace Repositories.Implementations
             List<Notification> notifications = new List<Notification>();
             DataTable dt = new DataTable();
             string query = @"
-                SELECT * FROM ttp.t_notifications WHERE c_userid = @uid
+                SELECT * FROM ttp.t_notification WHERE c_userid = @uid
             ";
             try
             {
@@ -108,7 +108,7 @@ namespace Repositories.Implementations
                         from DataRow row in dt.Rows
                         select new Notification
                         {
-                            NotificationId = Convert.ToInt32(row["c_notification_id"]),
+                            NotificationId = Convert.ToInt32(row["c_notificationid"]),
                             Title = row["c_title"].ToString(),
                             Description = row["c_description"].ToString(),
                             UserId = Convert.ToInt32(row["c_userid"])
@@ -121,6 +121,30 @@ namespace Repositories.Implementations
                 Console.WriteLine("Error in GetAllByUser:: ", ex.Message);
             }
             return notifications;
+        }
+
+        public async Task<int> Seen(int id)
+        {
+            string query = @"
+                UPDATE ttp.t_notification SET c_isread = true WHERE c_notificationid = @nid
+            ";
+            try
+            {
+                await _con.CloseAsync();
+                await _con.OpenAsync();
+                using (NpgsqlCommand cm = new NpgsqlCommand(query, _con))
+                {
+                    cm.Parameters.AddWithValue("nid", id);
+
+                    await cm.ExecuteNonQueryAsync();
+                    return 1;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Marking as Seen error :: " + ex.Message);
+                return 0;
+            }
         }
     }
 }
