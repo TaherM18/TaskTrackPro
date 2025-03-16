@@ -1,12 +1,5 @@
 using Elastic.Clients.Elasticsearch;
-using Microsoft.Extensions.Configuration;
-using Repositories.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Services
+namespace API.Services
 {
     public class ElasticsearchService
     {

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using StackExchange.Redis;
 
-namespace Services
+namespace API.Services
 {
     public class RedisService
     {

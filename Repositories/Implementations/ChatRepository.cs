@@ -27,7 +27,7 @@ namespace Repositories.Implementations
             {
                 await using var cmd = new NpgsqlCommand(query, _con);
 
-                if (_con.State == System.Data.ConnectionState.Open)
+                if (_con.State == ConnectionState.Open)
                     await _con.CloseAsync();
 
                 await _con.OpenAsync();
@@ -54,7 +54,7 @@ namespace Repositories.Implementations
 
 
         #region GetChatHistory
-        public async Task<List<Chat>?> GetChatHistory(string senderId, string receiverId)
+        public async Task<List<Chat>?> GetChatHistory(Guid senderId, Guid receiverId)
         {
             List<Chat> chatList = new List<Chat>();
 
@@ -68,7 +68,7 @@ namespace Repositories.Implementations
             {
                 await using var cmd = new NpgsqlCommand(query, _con);
 
-                if (_con.State == System.Data.ConnectionState.Open)
+                if (_con.State == ConnectionState.Open)
                     await _con.CloseAsync();
 
                 await _con.OpenAsync();
@@ -117,7 +117,7 @@ namespace Repositories.Implementations
             {
                 await using var cmd = new NpgsqlCommand(query, _con);
 
-                if (_con.State == System.Data.ConnectionState.Open)
+                if (_con.State == ConnectionState.Open)
                     await _con.CloseAsync();
 
                 await _con.OpenAsync();

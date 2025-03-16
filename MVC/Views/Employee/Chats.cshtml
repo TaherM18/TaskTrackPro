@@ -1,0 +1,49 @@
+@{
+    ViewData["Title"] = "Chats";
+}
+
+<div class="row mt-4">
+    <div class="col-10 m-auto">
+        <h2 class="text-center">All Chats</h2>
+        <ul class="list-group" id="userList">
+        </ul>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const user = JSON.parse(sessionStorage.getItem("user"));
+        const baseUrl = "http://localhost:5267/api";
+
+        function loadUsers() {
+            $.ajax({
+                url: `${baseUrl}/user`,
+                method: "GET",
+                success: function(response, status, xhr) {                    
+                    $.each(response.data, function(index, data) {
+                        $("#userList").append(`
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="ChatUser/${data.userId}" class="text-decoration-none">
+                                <img class="p-0 mr-2 rounded-circle img-thumbnail" style="height:40px; width:auto" src="/profile_images/${data.image}" onerror="this.src='/profile_images/placeholder.jpg'" />
+                                <strong>${user.userId == data.userId ? data.firstName + " " + data.lastName + " (You)" : data.firstName + " " + data.lastName}</strong>
+                            </a>
+                            <span class="badge bg-secondary">New: 0</span>
+                        </li>
+                        `);
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.log(xhr.responseJSON);
+                }
+            });
+        }
+
+        //
+
+        $(document).ready(function() {
+            setTimeout(function() {
+                loadUsers();
+            }, 1500);
+        });
+    </script>
+}

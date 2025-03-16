@@ -1,3 +1,4 @@
+using API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Repositories.Interfaces;
 using Repositories.Models;
@@ -9,20 +10,35 @@ namespace API.Controllers
     public class ChatApiController : ControllerBase
     {
         private readonly IChatInterface _chat;
+        private readonly RabbitMqService _rabbitMqService;
 
-        public ChatApiController(IChatInterface chat)
+        public ChatApiController(IChatInterface chat, RabbitMqService rabbitMqService)
         {
             _chat = chat;
+            _rabbitMqService = rabbitMqService;
         }
 
 
         #region SaveChat
         [HttpPost]
-        public async Task<IActionResult> SaveChat([FromBody] Chat chat)
+        public async Task<IActionResult> SaveChat([FromForm] Chat chat)
         {
             var chatId = await _chat.SaveChat(chat);
             if (chatId > 0)
-                return Ok(new { chatId });
+            {
+                // Publish message to RabbitMQ with delivery status
+                await _rabbitMqService.PublishMessage("chat_messages", new
+                {
+                    chatId,
+                    chat.Message,
+                    chat.SenderId,
+                    chat.ReceiverId,
+                    Timestamp = DateTime.UtcNow,
+                    Status = "sent"
+                });
+                
+                return Ok(new { chatId, status = "sent" });
+            }
             
             return BadRequest(new { message = "Failed to save chat" });
         }
@@ -30,12 +46,16 @@ namespace API.Controllers
 
 
         #region GetChatHistory
-        [HttpGet("history")]
-        public async Task<IActionResult> GetChatHistory([FromQuery] string senderId, [FromQuery] string receiverId)
+        [HttpGet("history/{senderId}/{receiverId}")]
+        public async Task<IActionResult> GetChatHistory(Guid senderId, Guid receiverId)
         {
             var chats = await _chat.GetChatHistory(senderId, receiverId);
             if (chats != null)
+            {
+                // Acknowledge messages for this user
+                _rabbitMqService.AcknowledgeMessages(receiverId.ToString());
                 return Ok(new { data = chats });
+            }
             
             return NotFound(new { message = "No chat history found" });
         }

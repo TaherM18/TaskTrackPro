@@ -3,14 +3,15 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Npgsql;
-using Repositories.Implementations;
-using Repositories.Interfaces;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
-using Services;
-//Elastic service
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
+using RabbitMQ.Client;
+//
+using API.Services;
+using Repositories.Implementations;
+using Repositories.Interfaces;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -19,17 +20,22 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddControllers();
-builder.Services.AddCors(p => p.AddPolicy("corsapp", builder =>
+// Replace the existing CORS configuration
+builder.Services.AddCors(options =>
 {
-    builder.WithOrigins("*").AllowAnyMethod().AllowAnyHeader();
-}));
+    options.AddPolicy("CorsPolicy", builder =>
+        builder
+            .WithOrigins("http://localhost:5089")
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials());
+});
 
-// Register Repositories
-builder.Services.AddSingleton<IUserInterface, UserRepository>();
-builder.Services.AddSingleton<ITaskInterface, TaskRepository>();
+// Repositories
+builder.Services.AddScoped<IUserInterface, UserRepository>();
+builder.Services.AddScoped<ITaskInterface, TaskRepository>();
 builder.Services.AddScoped<IChatInterface, ChatRepository>();
 builder.Services.AddScoped<INotificationInterface, NotificationRepository>();
-
 // Register Database Connection
 builder.Services.AddSingleton<NpgsqlConnection>((serviceProvider) =>
 {
@@ -98,7 +104,6 @@ builder.Services.AddSwaggerGen(c =>
 
 //Elastic Search Services
 builder.Services.AddSingleton<ElasticsearchService>();
-
 builder.Services.AddSingleton(provider =>
 {
     var configuration = builder.Configuration;
@@ -123,6 +128,52 @@ builder.Services.AddSingleton(provider =>
 });
 
 
+// Configure SignalR with options
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true; // Helpful for debugging
+    options.MaximumReceiveMessageSize = 102400; // 100 KB
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+    options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+});
+
+// RabbitMQ connection with retry logic
+builder.Services.AddSingleton<IConnectionFactory>(sp =>
+{
+    var factory = new ConnectionFactory()
+    {
+        HostName = "localhost",
+        UserName = "guest",
+        Password = "guest",
+        DispatchConsumersAsync = true
+    };
+
+    int retryCount = 3;
+    for (int i = 0; i < retryCount; i++)
+    {
+        try
+        {
+            using var connection = factory.CreateConnection();
+            Console.WriteLine("[RabbitMQ] Connection successful.");
+            return factory;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[RabbitMQ] Connection attempt {i + 1} failed: {ex.Message}");
+            Thread.Sleep(2000); // Wait 2 seconds before retrying
+        }
+    }
+    throw new Exception("[RabbitMQ] Failed to establish connection after retries.");
+});
+
+// RabbitMQ service
+builder.Services.AddSingleton<RabbitMqService>();
+// background service for listening to messages
+builder.Services.AddHostedService<RabbitMqListener>();
+
+// SignalR Hub as a scoped service
+builder.Services.AddTransient<ChatHub>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -133,13 +184,27 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors("corsapp");
+app.UseCors("CorsPolicy");
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
 
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Keep only this mapping with the detailed configuration
+app.MapHub<ChatHub>("/chatHub", options =>
+{
+    options.Transports = Microsoft.AspNetCore.Http.Connections.HttpTransportType.WebSockets | 
+                        Microsoft.AspNetCore.Http.Connections.HttpTransportType.LongPolling;
+    options.ApplicationMaxBufferSize = 102400; // 100 KB
+    options.TransportMaxBufferSize = 102400; // 100 KB
+});
 
 // Indexing for Elasticsearch
 app.Lifetime.ApplicationStarted.Register(async () =>
@@ -171,5 +236,6 @@ app.Lifetime.ApplicationStarted.Register(async () =>
         Console.WriteLine($"❌ Error indexing tasks: {ex.Message}");
     }
 });
+
 
 app.Run();
