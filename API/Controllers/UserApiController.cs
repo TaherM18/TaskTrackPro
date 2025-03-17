@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Repositories.Models;
 using Repositories.Interfaces;
 using Helpers;
+using TaskTrackPro.Services;
 
 namespace API.Controllers
 {
@@ -110,6 +111,10 @@ namespace API.Controllers
                 return BadRequest(new { message = "Email already exists" });
             if (result == 0)
                 return BadRequest(new { message = "Registration failed" });
+
+            var emailService =  new EmailService();
+
+            await emailService.SendWelcomeEmailAsync(model.Email, model.FirstName + " " + model.LastName);
 
             return Ok(new { message = "Registration successful" });
         }

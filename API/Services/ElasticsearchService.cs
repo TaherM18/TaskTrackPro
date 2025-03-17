@@ -35,7 +35,7 @@ namespace API.Services
 
                 if (!createResponse.ApiCallDetails.HasSuccessfulStatusCode)
                 {
-                    Console.WriteLine($"Failed to create index: {createResponse.DebugInformation}");
+                    // Console.WriteLine($"Failed to create index: {createResponse.DebugInformation}");
                 }
                 else
                 {
