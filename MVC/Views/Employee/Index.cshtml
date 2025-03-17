@@ -158,7 +158,7 @@
 
             loadDashboardData() {
                 $.ajax({
-                    url: `${this.baseUrl}/task/url/${this.user.userId}`,
+                    url: `${this.baseUrl}/task/user/${this.user.userId}`,
                     type: "GET",
                     beforeSend: () => {
                         // Show loading state for chart

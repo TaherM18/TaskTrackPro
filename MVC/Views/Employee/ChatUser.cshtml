@@ -257,13 +257,11 @@
     // DOCUMENT READY FUNCTION
 
     $(document).ready(function () {
-        setTimeout(function() {
-            loadReceiverData()
-            .then(() => {
-                loadChatHistory();
-                startSignalRConnection();
-            });
-        }, 2000);
+        loadReceiverData()
+        .then(() => {
+            loadChatHistory();
+            startSignalRConnection();
+        });
 
         //startSignalRConnection(); // Call the new connection setup function
 
