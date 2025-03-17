@@ -241,7 +241,7 @@ function markAllAsRead() {
 
 function updateNotificationList(notifications) {
     const notificationList = $("#notificationList");
-    notificationList.empty();
+    // notificationList.empty();
 
     if (!notifications || notifications.length === 0) {
         notificationList.append(`<div class="p-3 text-center text-muted">No notifications</div>`);
