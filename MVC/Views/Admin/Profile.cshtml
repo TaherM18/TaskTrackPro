@@ -72,10 +72,6 @@
         const user = JSON.parse(sessionStorage.getItem("user"));
         const baseUrl = "http://localhost:5267/api/user";
 
-        $(document).ready(function () {
-            loadUserData();
-        });
-
         function loadUserData() {
             $.ajax({
                 url: `${baseUrl}/${user.userId}`,
@@ -111,8 +107,8 @@
             }
 
             $.ajax({
-                url: `${baseUrl}/update`,
-                method: "POST",
+                url: baseUrl,
+                method: "PUT",
                 data: formData,
                 processData: false,
                 contentType: false,
@@ -125,5 +121,9 @@
                 }
             });
         }
+
+        $(document).ready(function () {
+            loadUserData();
+        });
     </script>
 }

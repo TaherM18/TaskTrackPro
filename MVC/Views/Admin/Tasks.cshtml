@@ -411,173 +411,173 @@
             }
         }
 
-        // ========
+        // Function to save/update task
+        function saveTask() {
+            const taskId = $('#btnSaveTask').data('id');
+            const method = taskId ? 'PUT' : 'POST';
+            const url = baseUrl;
+            
+            // Create a task object that matches your API's expected format
+            const taskData = {
+                taskId: taskId || null,
+                userId: $('#userId').val(),
+                title: $('#title').val().trim(),
+                description: $('#description').val().trim() || null,
+                estimatedDays: parseInt($('#estimatedDays').val()) || null,
+                startDate: $('#startDate').val(),
+                endDate: $('#endDate').val() || null,
+                status: $('#status').val()
+            };
 
-        $(document).ready(function () {
-    loadTaskData();
-
-    $('#btnAdd').on('click', function() {
-        $('#taskForm')[0].reset();
-        $('#taskModal').modal('show');
-        loadEmployees(); // Load employees when modal opens
-        $('#taskModalLabel').text('Add New Task');
-        $('#btnSaveTask').text('Save Task').data('id', '');
-    });
-
-    // Add form validation
-    $('#taskForm').on('submit', function(e) {
-        e.preventDefault();
-        
-        // Clear previous validation states
-        $(this).find('.is-invalid').removeClass('is-invalid');
-        
-        // Validate title explicitly
-        const title = $('#title').val().trim();
-        if (!title) {
-            $('#title').addClass('is-invalid');
-            $('#alert').removeClass().addClass('alert alert-danger')
-                .text('Please enter a title');
-            return;
-        }
-
-        if (this.checkValidity()) {
-            saveTask();
-        }
-        $(this).addClass('was-validated');
-    });
-
-    // Update save button to trigger form submission
-    $('#btnSaveTask').on('click', function() {
-        $('#taskForm').submit();
-    });
-
-    // Edit Task
-    $(document).on('click', '.btn-edit', function() {
-        const taskId = $(this).data('id');
-        $.ajax({
-            url: `${baseUrl}/${taskId}`,
-            type: 'GET',
-            success: function(response) {
-                if (response.success && response.data) {
-                    const task = response.data;
-                    loadEmployees(); // Load employees first
-                    
-                    // Set a slight delay to ensure dropdown is populated
-                    setTimeout(() => {
-                        $('#userId').val(task.userId);
-                        $('#title').val(task.title);
-                        $('#description').val(task.description);
-                        $('#estimatedDays').val(task.estimatedDays);
-                        $('#startDate').val(task.startDate.split('T')[0]);
-                        $('#endDate').val(task.endDate ? task.endDate.split('T')[0] : '');
-                        $('#status').val(task.status);
-                        
-                        $('#taskModalLabel').text('Edit Task');
-                        $('#btnSaveTask').text('Update Task').data('id', taskId);
-                        $('#taskModal').modal('show');
-                    }, 300);
-                }
-            },
-            error: function(error) {
-                console.error('Error loading task:', error);
+            // Validate required fields
+            if (!taskData.userId) {
+                $('#userId').addClass('is-invalid');
                 $('#alert').removeClass().addClass('alert alert-danger')
-                    .text('Error loading task data');
+                    .text('Please select an employee');
+                return;
+            } else {
+                $('#userId').removeClass('is-invalid');
             }
-        });
-    });
 
-    // Delete Task
-    $(document).on('click', '.btn-delete', function() {
-        const taskId = $(this).data('id');
-        if (confirm('Are you sure you want to delete this task?')) {
+            // Validate dates
+            if (taskData.endDate && taskData.startDate > taskData.endDate) {
+                $('#endDate').addClass('is-invalid');
+                $('#alert').removeClass().addClass('alert alert-danger')
+                    .text('End date cannot be earlier than start date');
+                return;
+            } else {
+                $('#endDate').removeClass('is-invalid');
+            }
+
             $.ajax({
-                url: `${baseUrl}/${taskId}`,
-                type: 'DELETE',
+                url: url,
+                type: method,
+                contentType: 'application/json',
+                data: JSON.stringify(taskData),
                 success: function(response) {
+                    $('#taskModal').modal('hide');
                     $('#alert').removeClass().addClass('alert alert-success')
-                        .text('Task deleted successfully!');
+                        .text(taskId ? 'Task updated successfully!' : 'Task added successfully!');
                     loadTaskData();
+                    $('#taskForm').removeClass('was-validated');
                 },
                 error: function(error) {
-                    console.error('Error deleting task:', error);
+                    console.error('Error saving task:', error);
+                    let errorMessage = taskId ? 'Error updating task' : 'Error adding task';
+                    if (error.responseJSON && error.responseJSON.errors) {
+                        errorMessage += ': ' + Object.values(error.responseJSON.errors).flat().join(', ');
+                    }
                     $('#alert').removeClass().addClass('alert alert-danger')
-                        .text('Error deleting task');
+                        .text(errorMessage);
                 }
             });
         }
-    });
 
-    // Function to save/update task
-    function saveTask() {
-        const taskId = $('#btnSaveTask').data('id');
-        const method = taskId ? 'PUT' : 'POST';
-        const url = baseUrl;
-        
-        // Create a task object that matches your API's expected format
-        const taskData = {
-            taskId: taskId || null,
-            userId: $('#userId').val(),
-            title: $('#title').val().trim(),
-            description: $('#description').val().trim() || null,
-            estimatedDays: parseInt($('#estimatedDays').val()) || null,
-            startDate: $('#startDate').val(),
-            endDate: $('#endDate').val() || null,
-            status: $('#status').val()
-        };
+        // DOCUMENT READY FUNCTION ========
 
-        // Validate required fields
-        if (!taskData.userId) {
-            $('#userId').addClass('is-invalid');
-            $('#alert').removeClass().addClass('alert alert-danger')
-                .text('Please select an employee');
-            return;
-        } else {
-            $('#userId').removeClass('is-invalid');
-        }
+        $(document).ready(function () {
+            loadTaskData();
 
-        // Validate dates
-        if (taskData.endDate && taskData.startDate > taskData.endDate) {
-            $('#endDate').addClass('is-invalid');
-            $('#alert').removeClass().addClass('alert alert-danger')
-                .text('End date cannot be earlier than start date');
-            return;
-        } else {
-            $('#endDate').removeClass('is-invalid');
-        }
+            $('#btnAdd').on('click', function() {
+                $('#taskForm')[0].reset();
+                $('#taskModal').modal('show');
+                loadEmployees(); // Load employees when modal opens
+                $('#taskModalLabel').text('Add New Task');
+                $('#btnSaveTask').text('Save Task').data('id', '');
+            });
 
-        $.ajax({
-            url: url,
-            type: method,
-            contentType: 'application/json',
-            data: JSON.stringify(taskData),
-            success: function(response) {
-                $('#taskModal').modal('hide');
-                $('#alert').removeClass().addClass('alert alert-success')
-                    .text(taskId ? 'Task updated successfully!' : 'Task added successfully!');
-                loadTaskData();
-                $('#taskForm').removeClass('was-validated');
-            },
-            error: function(error) {
-                console.error('Error saving task:', error);
-                let errorMessage = taskId ? 'Error updating task' : 'Error adding task';
-                if (error.responseJSON && error.responseJSON.errors) {
-                    errorMessage += ': ' + Object.values(error.responseJSON.errors).flat().join(', ');
+            // Add form validation
+            $('#taskForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                // Clear previous validation states
+                $(this).find('.is-invalid').removeClass('is-invalid');
+                
+                // Validate title explicitly
+                const title = $('#title').val().trim();
+                if (!title) {
+                    $('#title').addClass('is-invalid');
+                    $('#alert').removeClass().addClass('alert alert-danger')
+                        .text('Please enter a title');
+                    return;
                 }
-                $('#alert').removeClass().addClass('alert alert-danger')
-                    .text(errorMessage);
-            }
-        });
-    }
 
-    // Event Listeners for Start and End Date Changes
+                if (this.checkValidity()) {
+                    saveTask();
+                }
+                $(this).addClass('was-validated');
+            });
+
+            // Update save button to trigger form submission
+            $('#btnSaveTask').on('click', function() {
+                $('#taskForm').submit();
+            });
+
+            // Edit Task
+            $(document).on('click', '.btn-edit', function() {
+                const taskId = $(this).data('id');
+                $.ajax({
+                    url: `${baseUrl}/${taskId}`,
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.data) {
+                            const task = response.data;
+                            loadEmployees(); // Load employees first
+                            
+                            // Set a slight delay to ensure dropdown is populated
+                            setTimeout(() => {
+                                $('#userId').val(task.userId);
+                                $('#title').val(task.title);
+                                $('#description').val(task.description);
+                                $('#estimatedDays').val(task.estimatedDays);
+                                $('#startDate').val(task.startDate.split('T')[0]);
+                                $('#endDate').val(task.endDate ? task.endDate.split('T')[0] : '');
+                                $('#status').val(task.status);
+                                
+                                $('#taskModalLabel').text('Edit Task');
+                                $('#btnSaveTask').text('Update Task').data('id', taskId);
+                                $('#taskModal').modal('show');
+                            }, 300);
+                        }
+                    },
+                    error: function(error) {
+                        console.error('Error loading task:', error);
+                        $('#alert').removeClass().addClass('alert alert-danger')
+                            .text('Error loading task data');
+                    }
+                });
+            });
+
+            // Delete Task
+            $(document).on('click', '.btn-delete', function() {
+                const taskId = $(this).data('id');
+                if (confirm('Are you sure you want to delete this task?')) {
+                    $.ajax({
+                        url: `${baseUrl}/${taskId}`,
+                        type: 'DELETE',
+                        success: function(response) {
+                            $('#alert').removeClass().addClass('alert alert-success')
+                                .text('Task deleted successfully!');
+                            loadTaskData();
+                        },
+                        error: function(error) {
+                            console.error('Error deleting task:', error);
+                            $('#alert').removeClass().addClass('alert alert-danger')
+                                .text('Error deleting task');
+                        }
+                    });
+                }
+            });
+
+            // Event Listeners for Start and End Date Changes
             $('#startDate, #endDate').on('change', function () {
                 calculateEstimatedDays();
             });
 
-    $('#searchForm').on('submit', function(e) {
-        e.preventDefault();
-        searchTasks($("#txtSearch").val());
-    });
-});
+            $('#searchForm').on('submit', function(e) {
+                e.preventDefault();
+                searchTasks($("#txtSearch").val());
+            });
+        });
    </script>
 }
