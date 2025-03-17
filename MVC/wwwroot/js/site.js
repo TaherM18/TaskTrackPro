@@ -265,7 +265,7 @@ function markChatAsRead(chatId, button) {
 }
 
 function goToChat(senderId) {
-    window.location.href = `/Chats?userId=${senderId}`;
+    window.location.href = `ChatUser/${senderId}`;
 }
 
 // DOCUMENT READY FUCNTION ==============================================

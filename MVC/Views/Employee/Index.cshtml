@@ -9,28 +9,6 @@
 
         $('#greeting').text('Welcome, ' + user.firstName + ' ' + user.lastName + ' 👋');
 
-        $.ajax({
-            url: "http://localhost:5267/api/task/user/" + user.userId,
-            type: "GET",
-            success: function (response) {
-                console.log(response);
-                TasksList = response.data;
-                var numberOfTask = TasksList.length;
-                $('.total_task').text(numberOfTask);
-
-
-                //filter by status
-                let completedTaskCount = TasksList.filter(task => task.status == "Completed").length;
-                let pendingTaskCount = TasksList.filter(task => task.status == "Pending").length;
-
-
-                $('.completed_task').text(completedTaskCount);
-                $('.pending_task').text(pendingTaskCount);
-
-                LoadChart(completedTaskCount, pendingTaskCount);
-            }
-        });
-
         function LoadChart(completedTask, pendingTask) {
             var ctx = document.getElementById('taskChart').getContext('2d');
             var taskChart = new Chart(ctx, {
@@ -62,6 +40,32 @@
                 }
             });
         }
+
+        $(document).ready(function () {
+            setTimeout(() => {
+                $.ajax({
+                    url: "http://localhost:5267/api/task/user/" + user.userId,
+                    type: "GET",
+                    success: function (response) {
+                        console.log(response);
+                        TasksList = response.data;
+                        var numberOfTask = TasksList.length;
+                        $('.total_task').text(numberOfTask);
+
+
+                        //filter by status
+                        let completedTaskCount = TasksList.filter(task => task.status == "Completed").length;
+                        let pendingTaskCount = TasksList.filter(task => task.status == "Pending").length;
+
+
+                        $('.completed_task').text(completedTaskCount);
+                        $('.pending_task').text(pendingTaskCount);
+
+                        LoadChart(completedTaskCount, pendingTaskCount);
+                    }
+                });
+            }, 2000);
+        });
     </script>
 }
 
