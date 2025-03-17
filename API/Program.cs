@@ -23,6 +23,7 @@ builder.WebHost.UseUrls("http://localhost:5267"); // Change to a different port
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSignalR();
 
 builder.Services.AddControllers();
 // Replace the existing CORS configuration
@@ -77,7 +78,7 @@ builder.Services.AddAuthentication(option =>
         ValidateLifetime = false,
         ValidAudience = builder.Configuration["Jwt:Audience"],
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] 
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]
             ?? throw new ArgumentNullException("Jwt:Key is empty")))
     };
 });
@@ -95,7 +96,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement {
-        { 
+        {
             new OpenApiSecurityScheme {
                 Reference = new OpenApiReference {
                     Type = ReferenceType.SecurityScheme,
@@ -205,7 +206,7 @@ app.MapControllers();
 // Keep only this mapping with the detailed configuration
 app.MapHub<ChatHub>("/chatHub", options =>
 {
-    options.Transports = Microsoft.AspNetCore.Http.Connections.HttpTransportType.WebSockets | 
+    options.Transports = Microsoft.AspNetCore.Http.Connections.HttpTransportType.WebSockets |
                         Microsoft.AspNetCore.Http.Connections.HttpTransportType.LongPolling;
     options.ApplicationMaxBufferSize = 102400; // 100 KB
     options.TransportMaxBufferSize = 102400; // 100 KB
@@ -242,5 +243,6 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     }
 });
 
+app.MapHub<NotificationHub>("/notificationHub");
 
 app.Run();

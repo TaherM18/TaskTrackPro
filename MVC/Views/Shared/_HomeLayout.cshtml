@@ -11,13 +11,14 @@
 </head>
 <style>
     .footer {
-            text-align: center;
-            padding: 20px;
-            font-size: 1rem;
-            color: var(--primary-color);
-            margin-top: 20px;
-        }
+        text-align: center;
+        padding: 20px;
+        font-size: 1rem;
+        color: var(--primary-color);
+        margin-top: 20px;
+    }
 </style>
+
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
@@ -40,7 +41,7 @@
                         </li>
                     </ul>
                 </div>
-                <div id="profileMenu"> 
+                <div id="profileMenu">
                 </div>
             </div>
         </nav>
@@ -49,16 +50,17 @@
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
-         <footer>
-        <div class="footer">
-            © 2025 TaskTrackPro - Keep Hustling! 🚀
-        </div>
-    </footer>
+        <footer>
+            <div class="footer">
+                © 2025 TaskTrackPro - Keep Hustling! 🚀
+                        </div>
+        </footer>
     </div>
-    
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/lib/sweetalert2/sweetalert.min.js"></script>
+    <script src="~/lib/signalr.min.js"></script>
     <script src="~/js/site.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
