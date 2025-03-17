@@ -71,10 +71,12 @@ namespace API.Controllers
         public async Task<IActionResult> Add([FromBody] Notification notification)
         {
             var notificationId = await _notification.Add(notification);
+            
             if (notificationId <= 0)
             {
                 return StatusCode(500, new { message = "Failed to create notification" });
             }
+            await _hubContext.Clients.All.SendAsync("ReceiveNotifications", notification);
             return Ok(new
             {
                 message = "Notification created successfully",
@@ -86,7 +88,7 @@ namespace API.Controllers
         public async Task<IActionResult> SendNotification(string userId, [FromBody] Notification notification)
         {
             System.Console.WriteLine("IN notification api :: " + userId);
-            await _hubContext.Clients.All.SendAsync("ReceiveNotification", notification);
+            await _hubContext.Clients.All.SendAsync("ReceiveNotifications", notification);
             return Ok(new { message = "Notification sent!" });
         }
 

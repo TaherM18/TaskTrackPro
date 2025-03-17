@@ -62,123 +62,6 @@ function setProfileDiv() {
 
 // NOTIFCATIONS ============================================================
 
-// function loadNotifications() {
-//     const user = JSON.parse(sessionStorage.getItem("user"));
-//     if (!user) return;
-
-//     return new Promise(function(resolve, reject) {
-//         $.ajax({
-//             url: `http://localhost:5267/api/notification/unread/${user.userId}`,
-//             method: 'GET',
-//             success: function(response) {
-//                 resolve();
-//                 updateNotificationList(response.data);
-//             },
-//             error: function(xhr) {
-//                 console.error('Error fetching notifications:', xhr);
-//                 reject();
-//             }
-//         });
-//     });
-// }
-
-// function markAsRead(notificationId) {
-//     $.ajax({
-//         url: `http://localhost:5267/api/notification/mark-read/${notificationId}`,
-//         method: 'PUT',
-//         success: function() {
-//             loadNotifications(); // Refresh the list
-//         },
-//         error: function(xhr) {
-//             console.error('Error marking notification as read:', xhr);
-//         }
-//     });
-// }
-
-// function markAllAsRead() {
-//     const user = JSON.parse(sessionStorage.getItem("user"));
-//     if (!user) return;
-
-//     $.ajax({
-//         url: `http://localhost:5267/api/notification/mark-all-read/${user.userId}`,
-//         method: 'PUT',
-//         success: function() {
-//             loadNotifications(); // Refresh the list
-//         },
-//         error: function(xhr) {
-//             console.error('Error marking all notifications as read:', xhr);
-//         }
-//     });
-// }
-
-// function updateNotificationList(notifications) {
-//     const notificationList = $("#notificationList");
-//     notificationList.empty();
-
-//     if (!notifications || notifications.length === 0) {
-//         notificationList.append(`
-//             <div class="p-3 text-center text-muted">
-//                 No notifications
-//             </div>
-//         `);
-//         $("#notificationCount").hide();
-//         return;
-//     }
-
-//     notifications.forEach(notification => {
-//         const html = `
-//             <div class="notification-item ${notification.isRead ? '' : 'unread'}" 
-//                  onclick="markAsRead(${notification.notificationId})"
-//                  data-id="${notification.notificationId}">
-//                 <div class="d-flex align-items-center">
-//                     <div class="notification-icon ${notification.type.toLowerCase()}">
-//                         <i class="fas ${getNotificationIcon(notification.type.toLowerCase())}"></i>
-//                     </div>
-//                     <div class="flex-grow-1">
-//                         <div class="notification-title">${notification.title}</div>
-//                         <div class="notification-desc">${notification.description}</div>
-//                         <div class="notification-time">
-//                             <i class="far fa-clock"></i> ${formatTimeAgo(notification.createdAt)}
-//                         </div>
-//                     </div>
-//                 </div>
-//             </div>
-//         `;
-//         notificationList.append(html);
-//     });
-
-//     // Update badge count    
-//     $("#notificationCount").text(notifications.length).show();
-
-// }
-
-// function getNotificationIcon(type) {
-//     switch (type) {
-//         case 'task':
-//             return 'fa-tasks';
-//         case 'message':
-//             return 'fa-envelope';
-//         case 'alert':
-//             return 'fa-exclamation-triangle';
-//         default:
-//             return 'fa-bell';
-//     }
-// }
-
-// function formatTimeAgo(date) {
-//     const now = new Date();
-//     const diff = now - new Date(date);
-//     const minutes = Math.floor(diff / 60000);
-//     const hours = Math.floor(minutes / 60);
-//     const days = Math.floor(hours / 24);
-
-//     if (days > 0) return `${days}d ago`;
-//     if (hours > 0) return `${hours}h ago`;
-//     if (minutes > 0) return `${minutes}m ago`;
-//     return 'Just now';
-// }
-
-
 function loadNotifications() {
     const user = JSON.parse(sessionStorage.getItem("user"));
     if (!user) return;
@@ -194,7 +77,7 @@ function loadNotifications() {
         })
         .catch(err => console.error("SignalR connection failed: ", err));
 
-    connection.on("ReceiveNotification", function (notification) {
+    connection.on("ReceiveNotifications", function (notification) {
         console.log("New Notification Received:", notification);
         updateNotificationList([notification, ...getExistingNotifications()]);
     });
@@ -240,8 +123,9 @@ function markAllAsRead() {
 }
 
 function updateNotificationList(notifications) {
+    console.log("Updating notifications", notifications)
     const notificationList = $("#notificationList");
-    // notificationList.empty();
+    notificationList.empty();
 
     if (!notifications || notifications.length === 0) {
         notificationList.append(`<div class="p-3 text-center text-muted">No notifications</div>`);
