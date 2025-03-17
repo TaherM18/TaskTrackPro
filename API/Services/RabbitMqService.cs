@@ -37,6 +37,19 @@ namespace API.Services
             await Task.CompletedTask;
         }
 
+        public async Task EnsureQueueExists(string queueName)
+        {
+            // Declare the queue (will create if it doesn't exist)
+            _channel.QueueDeclare(
+                queue: queueName,
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                arguments: null);
+            
+            await Task.CompletedTask;
+        }
+
         public void AcknowledgeMessages(string userId)
         {
             try

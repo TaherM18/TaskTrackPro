@@ -72,6 +72,14 @@ namespace API.Services
                 }
             };
 
+            // Ensure the main queue exists before consuming
+            _channel.QueueDeclare(
+                queue: "chat_messages",
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                arguments: null);
+
             // Listen on all user queues
             _channel.BasicConsume(queue: "chat_messages",
                             autoAck: false,

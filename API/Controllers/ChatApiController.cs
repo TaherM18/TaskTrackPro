@@ -26,7 +26,8 @@ namespace API.Controllers
             var chatId = await _chat.SaveChat(chat);
             if (chatId > 0)
             {
-                // Publish message to RabbitMQ with delivery status
+                // Ensure queue exists and publish message to RabbitMQ with delivery status
+                await _rabbitMqService.EnsureQueueExists("chat_messages");
                 await _rabbitMqService.PublishMessage("chat_messages", new
                 {
                     chatId,

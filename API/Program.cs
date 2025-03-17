@@ -12,7 +12,12 @@ using RabbitMQ.Client;
 using API.Services;
 using Repositories.Implementations;
 using Repositories.Interfaces;
+
+// Find where the web application is being configured
 var builder = WebApplication.CreateBuilder(args);
+
+// Add this line to change the port
+builder.WebHost.UseUrls("http://localhost:5267"); // Change to a different port
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
