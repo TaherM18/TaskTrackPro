@@ -38,15 +38,21 @@
                                 <input type="text" id="firstName" name="firstName" class="form-control" placeholder="Firstname" aria-label="Firstname">
                                 <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Lastname" aria-label="Lastname">
                             </div>
-                            <span id="msg-firstName" class="text-danger"></span>
-                            <span id="msg-lastName" class="text-danger"></span>
+                            <span class="row">
+                                <span class="col">
+                                    <small id="msg-firstName" class="text-danger"></small>
+                                </span>
+                                <span class="col">
+                                    <small id="msg-lastName" class="text-danger"></small>
+                                </span>
+                            </span>
                         </div>
 
                         <div class="mb-3">
                             <label class="small mb-1" for="email">Email Address</label>
                             <input class="form-control" id="email" name="email" type="email"
                                 placeholder="Enter your email address">
-                            <span id="msg-email" class="text-danger"></span>
+                            <small id="msg-email" class="text-danger"></small>
                         </div>
 
                         <div class="mb-3">
@@ -74,6 +80,7 @@
 </div>
 
 @section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
     <script>
         const user = JSON.parse(sessionStorage.getItem("user"));
         const baseUrl = "http://localhost:5267/api/user";
@@ -136,11 +143,57 @@
         $(document).ready(function() {
             loadUserData();
 
-            $("#profileForm").submit(function(e) {
-                e.preventDefault();
-                handleFormSubmit();
+            // Form validation rules
+            $('#profileForm').validate({
+                rules: {
+                    firstName: {
+                        required: true,
+                        minlength: 2
+                    },
+                    lastName: {
+                        required: true,
+                        minlength: 2
+                    },
+                    email: {
+                        required: true,
+                        email: true
+                    }
+                },
+                messages: {
+                    firstName: {
+                        required: "Please enter your first name",
+                        minlength: "First name must be at least 2 characters"
+                    },
+                    lastName: {
+                        required: "Please enter your last name",
+                        minlength: "Last name must be at least 2 characters"
+                    },
+                    email: {
+                        required: "Please enter your email",
+                        email: "Please enter a valid email address"
+                    }
+                },
+                errorPlacement: function(error, element) {
+                    const msgId = "#msg-" + $(element).attr("name");
+                    $(msgId).removeClass('text-success').addClass('text-danger').text(error.text());
+                },
+                highlight: function(element) {
+                    // error
+                    $(element).removeClass('is-valid').addClass('is-invalid');
+                },
+                unhighlight: function(element) {
+                    // success
+                    $(element).removeClass('is-invalid').addClass('is-valid');
+                    const msgId = "#msg-" + $(element).attr("name");
+                    $(msgId).removeClass('text-danger').addClass('text-success').text("Looks good!");
+                },
+                submitHandler: function (form, event) {
+                    event.preventDefault();
+                    handleFormSubmit();
+                }
             });
 
+            // Image preview
             $("#imageFile").change(function() {
                 let file = this.files[0];
                 let reader = new FileReader(file);
