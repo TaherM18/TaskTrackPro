@@ -10,16 +10,16 @@
     @* <link rel="stylesheet" href="~/lib/font-awesome/all.min.css" /> *@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     @await RenderSectionAsync("Styles", required: false)
-</head>
-<style>
-    .footer {
+    <style>
+        .footer {
             text-align: center;
             padding: 20px;
             font-size: 1rem;
             color: var(--primary-color);
             margin-top: 20px;
         }
-</style>
+    </style>
+</head>
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
@@ -105,8 +105,9 @@
     <footer>
         <div class="footer">
             © 2025 TaskTrackPro - Keep Hustling! 🚀
-        </div>
+        </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/lib/sweetalert2/sweetalert.min.js"></script>
