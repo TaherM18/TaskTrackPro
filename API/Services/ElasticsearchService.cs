@@ -53,15 +53,17 @@ namespace API.Services
         #region Document Operations
         public async System.Threading.Tasks.Task IndexTaskAsync(Repositories.Models.Task task)
         {
+             int successCount = 0;
             var response = await _client.IndexAsync(task, idx => idx.Index(_taskIndex));
             if (!response.IsValidResponse)
             {
-                Console.WriteLine($"❌ Error indexing task: {response.DebugInformation}");
+                Console.WriteLine($"❌ Error indexing task.");
+                 successCount++;
             }
-            else
-            {
-                Console.WriteLine($"✅ Task {task.TaskId} indexed successfully.");
-            }
+             if (successCount > 0)
+    {
+        Console.WriteLine($"✅ {successCount} Tasks indexed successfully in Elasticsearch.");
+    }
         }
         #endregion
         #region Search Method
