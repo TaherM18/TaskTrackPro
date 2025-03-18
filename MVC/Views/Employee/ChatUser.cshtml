@@ -151,232 +151,194 @@
 
 
 @section Scripts {
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.0/signalr.min.js"></script>
-<script>
-    const receiverId = window.location.href.split("/").pop();
-    console.log("receiverId in url:", receiverId);
-    let receiver = null;
-    let connection;
-    const user = JSON.parse(sessionStorage.getItem("user"));
-    const baseUrl = "http://localhost:5267/api";
-    //
-    //
-    function getFormData() {
-        const formData = new FormData();
-        formData.append("Message", $("#message").val());
-        formData.append("SenderId", user.userId);
-        formData.append("ReceiverId", receiverId);
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.0/signalr.min.js"></script>
+    <script>
+        const receiverId = window.location.href.split("/").pop();
+        console.log("receiverId in url:", receiverId);
+        let receiver = null;
+        let connection;
+        const user = JSON.parse(sessionStorage.getItem("user"));
+        const baseUrl = "http://localhost:5267/api";
 
-        return formData;
-    }
-    //
-    function loadReceiverData() {
-        return new Promise(function(resolve, reject) {
-            $.ajax({
-                url: `${baseUrl}/user/${receiverId}`,
-                method: "GET",
-                success: function (response, status, xhr) {
-                    receiver = response.data;
-                    $('#receiverName').text(receiver.firstName + " " + receiver.lastName);
-                    $('#receiverImage').attr('src', `/profile_images/${receiver.image}`);
-                    $('#onlineStatus').html(receiver?.isOnline == true ? `<i class="fa-solid fa-circle-check me-1"></i>Online` : `<i class="fa-solid fa-circle-xmark me-1"></i>Offline`);
-                    //
-                    resolve();
-                },
-                error: function (xhr, status, error) {
-                    console.error("loadReceiverData():\n", xhr.responseJSON);
-                    reject();
-                }
-            });
-        });
-    }
-    //
-    // Update the message append template in loadChatHistory and ReceiveMessage functions
-    function appendMessage(chat, senderName) {
-        let alignClass = (chat.senderId == user.userId) ? "justify-content-end" : "justify-content-start";
-        let bubbleClass = (chat.senderId == user.userId) ? "bg-primary text-white" : "bg-white";
-        let timestamp = new Date(chat.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        let messageStatus = chat.status || 'sent';
-        let statusIcon = getStatusIcon(messageStatus);
+        function getFormData() {
+            const formData = new FormData();
+            formData.append("Message", $("#message").val());
+            formData.append("SenderId", user.userId);
+            formData.append("ReceiverId", receiverId);
 
-        $("#chat-box").append(`
-            <div class="d-flex ${alignClass} mb-3" data-message-id="${chat.chatId}">
-                <div class="d-flex flex-column ${bubbleClass} shadow-sm rounded-3 p-3" style="max-width: 75%;">
-                    <div class="message-text">${chat.message}</div>
-                    <small class="text-${chat.senderId == user.userId ? 'white-50' : 'muted'} align-self-end mt-1">
-                        ${timestamp}
-                        ${statusIcon}
-                    </small>
-                </div>
-            </div>
-        `);
-    }
-
-    function getStatusIcon(status) {
-        switch(status) {
-            case 'sent':
-                return '<i class="fa-solid fa-check"></i>';
-            case 'delivered':
-                return '<i class="fa-solid fa-check-double"></i>';
-            case 'read':
-                return '<i class="fa-solid fa-check-double text-primary"></i>';
-            default:
-                return '<i class="fa-solid fa-clock"></i>';
+            return formData;
         }
-    }
-    //
-    // Update loadChatHistory function to use the new appendMessage
-    function loadChatHistory() {
-        $.ajax({
-            url: `${baseUrl}/chat/history/${user.userId}/${receiver.userId}`,
-            method: "GET",
-            success: function (response) {
-                $("#message").val("");
-                console.log("Chat History Loaded:", response);
-                const chatArray = response.data;
-                $("#chat-box").html("");
 
-                chatArray.forEach(chat => {
-                    appendMessage(chat, chat.senderId == user.userId ? 'You' : `${receiver.firstName} ${receiver.lastName}`);
-                });
-
-                $("#chat-box").scrollTop($("#chat-box")[0].scrollHeight);
-            },
-            error: function (xhr) {
-                console.error("Error Loading Chat History:", xhr.responseJSON);
-            }
-        });
-    }
-    //
-    // Add this function to handle connection state
-    function ensureConnected() {
-        if (!connection || 
-            connection.state === signalR.HubConnectionState.Disconnected || 
-            connection.state === signalR.HubConnectionState.Disconnecting) {
-            console.log("Connection lost, reconnecting...");
-            return startSignalRConnection();
-        }
-        return Promise.resolve();
-    }
-    
-    // Update the sendMessage function
-    function sendMessage() {
-        let message = $("#message").val();
-        
-        if (!message.trim()) return;
-        
-        // Ensure connection is active before sending
-        ensureConnected().then(() => {
-            let formData = getFormData();
-            
-            // Create a temporary chat object for immediate display
-            const tempChatObject = {
-                chatId: null,
-                message: message,
-                senderId: user.userId,
-                receiverId: receiverId,
-                timestamp: new Date(),
-                isRead: false,
-                status: 'sending'
-            }
-            
-            // Append the new message instantly to UI
-            appendMessage(tempChatObject, 'You');
-            
-            // Auto-scroll to the latest message
-            $("#chat-box").scrollTop($("#chat-box")[0].scrollHeight);
-            
-            // Send message via AJAX (store in DB)
-            $.ajax({
-                url: `${baseUrl}/chat`,
-                method: "POST",
-                data: formData,
-                contentType: false,
-                processData: false,
-                success: function (response) {
-                    console.log("Message Sent:", response);
-                    
-                    // Update the temporary message with the real ID and status
-                    tempChatObject.chatId = response.chatId;
-                    tempChatObject.status = response.status;
-                    
-                    // Update the message status in UI
-                    $(`[data-message-id="null"]:last`).attr('data-message-id', response.chatId)
-                        .find('i').replaceWith(getStatusIcon(response.status));
-                    
-                    // Try to deliver the message via SignalR if connected
-                    if (connection && connection.state === signalR.HubConnectionState.Connected) {
-                        connection.invoke("SendMessageToUser", receiverId, {
-                            chatId: response.chatId,
-                            message: message,
-                            senderId: user.userId,
-                            receiverId: receiverId,
-                            timestamp: new Date(),
-                            isRead: false
-                        }).catch(err => {
-                            console.error("Error sending message via SignalR:", err);
-                            // If SignalR fails, the message is still saved in DB
-                        });
+        function loadReceiverData() {
+            return new Promise(function(resolve, reject) {
+                $.ajax({
+                    url: `${baseUrl}/user/${receiverId}`,
+                    method: "GET",
+                    success: function (response, status, xhr) {
+                        receiver = response.data;
+                        $('#receiverName').text(receiver.firstName + " " + receiver.lastName);
+                        $('#receiverImage').attr('src', `/profile_images/${receiver.image}`);
+                        $('#onlineStatus').html(receiver?.isOnline == true ? `<i class="fa-solid fa-circle-check me-1"></i>Online` : `<i class="fa-solid fa-circle-xmark me-1"></i>Offline`);
+                        resolve();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("loadReceiverData():\n", xhr.responseJSON);
+                        reject();
                     }
+                });
+            });
+        }
+
+        function appendMessage(chat, senderName) {
+            let alignClass = (chat.senderId == user.userId) ? "justify-content-end" : "justify-content-start";
+            let bubbleClass = (chat.senderId == user.userId) ? "bg-primary text-white" : "bg-white";
+            let timestamp = new Date(chat.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            let messageStatus = chat.status || 'sent';
+            let statusIcon = getStatusIcon(messageStatus);
+
+            $("#chat-box").append(`
+                <div class="d-flex ${alignClass} mb-3" data-message-id="${chat.chatId}">
+                    <div class="d-flex flex-column ${bubbleClass} shadow-sm rounded-3 p-3" style="max-width: 75%;">
+                        <div class="message-text">${chat.message}</div>
+                        <small class="text-${chat.senderId == user.userId ? 'white-50' : 'muted'} align-self-end mt-1">
+                            ${timestamp}
+                            ${statusIcon}
+                        </small>
+                    </div>
+                </div>
+            `);
+        }
+
+        function getStatusIcon(status) {
+            switch(status) {
+                case 'sent':
+                    return '<i class="fa-solid fa-check"></i>';
+                case 'delivered':
+                    return '<i class="fa-solid fa-check-double"></i>';
+                case 'read':
+                    return '<i class="fa-solid fa-check-double text-primary"></i>';
+                default:
+                    return '<i class="fa-solid fa-clock"></i>';
+            }
+        }
+
+        function loadChatHistory() {
+            $.ajax({
+                url: `${baseUrl}/chat/history/${user.userId}/${receiver.userId}`,
+                method: "GET",
+                success: function (response) {
+                    $("#message").val("");
+                    console.log("Chat History Loaded:", response);
+                    const chatArray = response.data;
+                    $("#chat-box").html("");
+
+                    chatArray.forEach(chat => {
+                        appendMessage(chat, chat.senderId == user.userId ? 'You' : `${receiver.firstName} ${receiver.lastName}`);
+                    });
+
+                    $("#chat-box").scrollTop($("#chat-box")[0].scrollHeight);
                 },
                 error: function (xhr) {
-                    console.error("Error Sending Message:", xhr.responseJSON);
-                    // Update UI to show error
-                    $(`[data-message-id="null"]:last`).find('i').replaceWith('<i class="fa-solid fa-exclamation-circle text-danger"></i>');
+                    console.error("Error Loading Chat History:", xhr.responseJSON);
                 }
             });
-            
-            // Clear input field after sending
-            $("#message").val("");
-        });
-    }
-    
-    // Update the SignalR connection setup
-    function startSignalRConnection() {
-        return new Promise((resolve, reject) => {
-            // If there's an existing connection, stop it first
-            if (connection) {
-                connection.stop().then(() => {
-                    console.log("Previous connection stopped");
-                }).catch(err => {
-                    console.warn("Error stopping previous connection:", err);
-                });
+        }
+
+        function ensureConnected() {
+            if (!connection || 
+                connection.state === signalR.HubConnectionState.Disconnected || 
+                connection.state === signalR.HubConnectionState.Disconnecting) {
+                console.log("Connection lost, reconnecting...");
+                return startSignalRConnection();
             }
+            return Promise.resolve();
+        }
+
+        function sendMessage() {
+            let message = $("#message").val();
             
-            connection = new signalR.HubConnectionBuilder()
-                .withUrl(`http://localhost:5267/chatHub?userId=${user.userId}`, {
-                    withCredentials: false,
-                    skipNegotiation: false
-                })
-                .withAutomaticReconnect([0, 1000, 2000, 5000, 10000, 20000])
-                .configureLogging(signalR.LogLevel.Information)
-                .build();
+            if (!message.trim()) return;
             
-            // Set up connection event handlers
-            connection.onreconnecting(error => {
-                console.log("Connection reconnecting:", error);
-                $("#chatForm").addClass("disabled");
+            ensureConnected().then(() => {
+                let formData = getFormData();
+                
+                const tempChatObject = {
+                    chatId: null,
+                    message: message,
+                    senderId: user.userId,
+                    receiverId: receiverId,
+                    timestamp: new Date(),
+                    isRead: false,
+                    status: 'sending'
+                }
+                
+                appendMessage(tempChatObject, 'You');
+                $("#chat-box").scrollTop($("#chat-box")[0].scrollHeight);
+                
+                $.ajax({
+                    url: `${baseUrl}/chat`,
+                    method: "POST",
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function (response) {
+                        console.log("Message Sent:", response);
+                        
+                        tempChatObject.chatId = response.chatId;
+                        tempChatObject.status = response.status;
+                        
+                        $(`[data-message-id="null"]:last`).attr('data-message-id', response.chatId)
+                            .find('i').replaceWith(getStatusIcon(response.status));
+                        
+                        if (connection && connection.state === signalR.HubConnectionState.Connected) {
+                            connection.invoke("SendMessageToUser", receiverId, {
+                                chatId: response.chatId,
+                                message: message,
+                                senderId: user.userId,
+                                receiverId: receiverId,
+                                timestamp: new Date(),
+                                isRead: false
+                            }).catch(err => console.error("Error sending message via SignalR:", err));
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error("Error Sending Message:", xhr.responseJSON);
+                        $(`[data-message-id="null"]:last`).find('i').replaceWith('<i class="fa-solid fa-exclamation-circle text-danger"></i>');
+                    }
+                });
+                
+                $("#message").val("");
             });
-            
-            connection.onreconnected(connectionId => {
-                console.log("Connection reconnected. ID:", connectionId);
-                $("#chatForm").removeClass("disabled");
-            });
-            
-            connection.onclose(error => {
-                console.log("Connection closed:", error);
-                $("#chatForm").addClass("disabled");
-                // Try to reconnect after a delay
-                setTimeout(() => startSignalRConnection(), 5000);
-            });
-            
-            connection.start()
-                .then(() => {
-                    console.log("Connected to SignalR!");
-                    // Enable the chat form after connection
+        }
+
+        function startSignalRConnection() {
+            return new Promise((resolve, reject) => {
+                if (connection) {
+                    connection.stop().then(() => {
+                        console.log("Previous connection stopped");
+                    }).catch(err => {
+                        console.warn("Error stopping previous connection:", err);
+                    });
+                }
+                
+                connection = new signalR.HubConnectionBuilder()
+                    .withUrl(`http://localhost:5267/chatHub?userId=${user.userId}`, {
+                        withCredentials: false,
+                        skipNegotiation: false
+                    })
+                    .withAutomaticReconnect([0, 2000, 5000, 10000, 20000])
+                    .configureLogging(signalR.LogLevel.Information)
+                    .build();
+                
+                connection.onreconnecting(error => {
+                    console.log("Connection reconnecting:", error);
+                    $("#chatForm").addClass("disabled");
+                });
+                
+                connection.onreconnected(connectionId => {
+                    console.log("Connection reconnected. ID:", connectionId);
                     $("#chatForm").removeClass("disabled");
                     
-                    // Check receiver's online status after connection is established
                     connection.invoke("CheckUserStatus", receiverId)
                         .then(isOnline => {
                             $('#onlineStatus').html(isOnline ? 
@@ -384,84 +346,83 @@
                                 `<i class="fa-solid fa-circle-xmark me-1"></i>Offline`);
                         })
                         .catch(err => console.error("Error checking user status:", err));
-                    
-                    resolve();
-                })
-                .catch(err => {
-                    console.error("SignalR Connection Error:", err);
+                });
+                
+                connection.onclose(error => {
+                    console.log("Connection closed:", error);
                     $("#chatForm").addClass("disabled");
                     setTimeout(() => startSignalRConnection(), 5000);
-                    reject(err);
                 });
-            
-            // Handle incoming messages
-            connection.on("ReceiveMessage", function (chat) {
-                console.log("Received message:", chat);
                 
-                // Check if this message is already displayed (to avoid duplicates)
-                if ($(`[data-message-id="${chat.chatId}"]`).length === 0) {
-                    appendMessage(chat, chat.senderId === user.userId ? 'You' : receiver.firstName);
-                    $("#chat-box").scrollTop($("#chat-box")[0].scrollHeight);
-                }
+                connection.start()
+                    .then(() => {
+                        console.log("Connected to SignalR!");
+                        $("#chatForm").removeClass("disabled");
+                        
+                        connection.invoke("CheckUserStatus", receiverId)
+                            .then(isOnline => {
+                                $('#onlineStatus').html(isOnline ? 
+                                    `<i class="fa-solid fa-circle-check me-1"></i>Online` : 
+                                    `<i class="fa-solid fa-circle-xmark me-1"></i>Offline`);
+                            })
+                            .catch(err => console.error("Error checking user status:", err));
+                        resolve();
+                    })
+                    .catch(err => {
+                        console.error("SignalR Connection Error:", err);
+                        $("#chatForm").addClass("disabled");
+                        setTimeout(() => startSignalRConnection(), 5000);
+                        reject(err);
+                    });
                 
-                // Acknowledge message receipt
-                if (chat.senderId !== user.userId) {
-                    connection.invoke("AcknowledgeMessage", chat.chatId, chat.senderId)
-                        .catch(err => console.error("Error acknowledging message:", err));
-                }
+                connection.on("ReceiveMessage", function (chat) {
+                    console.log("Received message:", chat);
+                    
+                    if ($(`[data-message-id="${chat.chatId}"]`).length === 0) {
+                        appendMessage(chat, chat.senderId === user.userId ? 'You' : receiver.firstName);
+                        $("#chat-box").scrollTop($("#chat-box")[0].scrollHeight);
+                    }
+                    
+                    if (chat.senderId !== user.userId) {
+                        connection.invoke("AcknowledgeMessage", chat.chatId, chat.senderId)
+                            .catch(err => console.error("Error acknowledging message:", err));
+                    }
+                });
+                
+                connection.on("UserOnline", function(userId) {
+                    console.log("User online notification received for:", userId);
+                    if(userId === receiverId) {
+                        $('#onlineStatus').html(`<i class="fa-solid fa-circle-check me-1"></i>Online`);
+                    }
+                });
+                
+                connection.on("UserOffline", function(userId) {
+                    console.log("User offline notification received for:", userId);
+                    if(userId === receiverId) {
+                        $('#onlineStatus').html(`<i class="fa-solid fa-circle-xmark me-1"></i>Offline`);
+                    }
+                });
+                
+                connection.on("MessageStatus", function (messageId, status) {
+                    console.log("Message status update:", messageId, status);
+                    const messageElement = $(`[data-message-id="${messageId}"]`);
+                    if (messageElement.length) {
+                        messageElement.find('i').replaceWith(getStatusIcon(status));
+                    }
+                });
             });
-            
-            // Handle online/offline status updates
-            connection.on("UserOnline", function(userId) {
-                console.log("User online notification received for:", userId);
-                if(userId === receiverId) {
-                    $('#onlineStatus').html(`<i class="fa-solid fa-circle-check me-1"></i>Online`);
-                }
+        }
+
+        $(document).ready(function() {
+            loadReceiverData().then(() => {
+                loadChatHistory();
+                startSignalRConnection();
             });
-            
-            connection.on("UserOffline", function(userId) {
-                console.log("User offline notification received for:", userId);
-                if(userId === receiverId) {
-                    $('#onlineStatus').html(`<i class="fa-solid fa-circle-xmark me-1"></i>Offline`);
-                }
-            });
-            
-            connection.on("MessageStatus", function (messageId, status) {
-                console.log("Message status update:", messageId, status);
-                const messageElement = $(`[data-message-id="${messageId}"]`);
-                if (messageElement.length) {
-                    messageElement.find('i').replaceWith(getStatusIcon(status));
-                }
+
+            $("#chatForm").on("submit", function(e) {
+                e.preventDefault();
+                sendMessage();
             });
         });
-    }
-    
-    // Update document ready function to add window events
-    $(document).ready(function () {
-        loadReceiverData()
-        .then(() => {
-            loadChatHistory();
-            startSignalRConnection();
-        });
-    
-        $("#chatForm").on("submit", function (e) {
-            e.preventDefault();
-            sendMessage();
-        });
-        
-        // Add window focus/blur events to handle tab switching
-        $(window).on('focus', function() {
-            console.log('Window focused - checking connection');
-            ensureConnected();
-        });
-        
-        // Add beforeunload event to properly disconnect
-        $(window).on('beforeunload', function() {
-            if (connection) {
-                // Try to gracefully disconnect
-                connection.stop().catch(() => {});
-            }
-        });
-    });
-</script>
+    </script>
 }

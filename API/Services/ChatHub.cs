@@ -72,15 +72,13 @@ namespace API.Services
             try
             {
                 var db = _redis.GetDatabase();
-                string? connectionId = null;
                 bool isReceiverOnline = false;
                 
                 // Check if user is online in both Redis and memory
-                var redisConnectionId = await db.HashGetAsync("UserConnections", receiverId);
-                if (redisConnectionId.HasValue && !string.IsNullOrEmpty(redisConnectionId))
+                var connectionId = await db.HashGetAsync("UserConnections", receiverId);
+                if (connectionId.HasValue && !string.IsNullOrEmpty(connectionId))
                 {
                     isReceiverOnline = true;
-                    connectionId = redisConnectionId;
                 }
                 else if (_userConnectionMap.TryGetValue(receiverId, out string? cachedConnectionId))
                 {
@@ -88,28 +86,15 @@ namespace API.Services
                     connectionId = cachedConnectionId;
                 }
                 
-                if (isReceiverOnline && !string.IsNullOrEmpty(connectionId))
+                if (isReceiverOnline)
                 {
-                    // Try to send directly to the client first
-                    try 
-                    {
-                        await Clients.Client(connectionId).SendAsync("ReceiveMessage", message);
-                        
-                        // Also send to the user's group as a fallback
-                        await Clients.Group(receiverId).SendAsync("ReceiveMessage", message);
-                        
-                        // Update the sender with the delivery status
-                        await Clients.User(message.SenderId.ToString()).SendAsync("MessageStatus", message.ChatId, "delivered");
-                        await Clients.Client(Context.ConnectionId).SendAsync("MessageStatus", message.ChatId, "delivered");
-                        
-                        Console.WriteLine($"Message sent via SignalR from {message.SenderId} to {receiverId}");
-                    }
-                    catch (Exception ex)
-                    {
-                        // If direct client send fails, try group send as fallback
-                        await Clients.Group(receiverId).SendAsync("ReceiveMessage", message);
-                        Console.WriteLine($"Direct client send failed, using group fallback: {ex.Message}");
-                    }
+                    // Send directly to the user's connection if online
+                    await Clients.Client(connectionId).SendAsync("ReceiveMessage", message);
+                    
+                    // Update the sender with the delivery status
+                    await Clients.User(message.SenderId.ToString()).SendAsync("MessageStatus", message.ChatId, "delivered");
+                    
+                    Console.WriteLine($"Message sent via SignalR from {message.SenderId} to {receiverId}");
                 }
                 else
                 {
@@ -118,7 +103,6 @@ namespace API.Services
                     
                     // Update the sender that the message is sent but not delivered
                     await Clients.User(message.SenderId.ToString()).SendAsync("MessageStatus", message.ChatId, "sent");
-                    await Clients.Client(Context.ConnectionId).SendAsync("MessageStatus", message.ChatId, "sent");
                 }
             }
             catch (Exception ex)

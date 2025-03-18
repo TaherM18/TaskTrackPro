@@ -172,9 +172,19 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
     <script>
         const user = JSON.parse(sessionStorage.getItem("user"));
         const baseUrl = "http://localhost:5267/api/user";
+
+        // Allow only alphabetic characters using regex
+        $.validator.addMethod("lettersOnly", function (value, element) {
+            return this.optional(element) || /^[A-Za-z]+$/.test(value);
+        }, "Only alphabetic characters are allowed");
+
+
         //
         function loadUserData() {
             $.ajax({
@@ -220,6 +230,7 @@
                     });
                 },
                 error: function (xhr, status, error) {
+                error: function (xhr, status, error) {
                     Swal.fire({
                         title: "Oops",
                         text: error,
@@ -232,6 +243,7 @@
         }
         //
         $(document).ready(function () {
+        $(document).ready(function () {
             loadUserData();
 
             // Form validation rules
@@ -239,11 +251,15 @@
                 rules: {
                     firstName: {
                         required: true,
-                        minlength: 2
+                        minlength: 2,
+                        lettersOnly: true
                     },
                     lastName: {
                         required: true,
-                        minlength: 2
+                        minlength: 2,
+                        lettersOnly: true
+
+
                     },
                     email: {
                         required: true,
@@ -253,11 +269,15 @@
                 messages: {
                     firstName: {
                         required: "Please enter your first name",
-                        minlength: "First name must be at least 2 characters"
+                        minlength: "First name must be at least 2 characters",
+                        lettersOnly: "Only alphabetic characters are allowed"
                     },
                     lastName: {
                         required: "Please enter your last name",
-                        minlength: "Last name must be at least 2 characters"
+                        minlength: "Last name must be at least 2 characters",
+                        lettersOnly: "Only alphabetic characters are allowed"
+
+
                     },
                     email: {
                         required: "Please enter your email",
@@ -269,9 +289,11 @@
                     $(msgId).removeClass('text-success').addClass('text-danger').text(error.text());
                 },
                 highlight: function (element) {
+                highlight: function (element) {
                     // error
                     $(element).removeClass('is-valid').addClass('is-invalid');
                 },
+                unhighlight: function (element) {
                 unhighlight: function (element) {
                     // success
                     $(element).removeClass('is-invalid').addClass('is-valid');
@@ -284,10 +306,17 @@
                 }
             });
 
+            // Real-time filtering for alphabets only
+            function validateInput(input) {
+                input.value = input.value.replace(/[^A-Za-z]/g, '');
+            }
+
             // Image preview
+            $("#imageFile").change(function () {
             $("#imageFile").change(function () {
                 let file = this.files[0];
                 let reader = new FileReader(file);
+                reader.onload = function (e) {
                 reader.onload = function (e) {
                     $("#preview").attr("src", e.target.result);
                 }

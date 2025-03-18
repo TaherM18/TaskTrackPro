@@ -20,29 +20,29 @@ namespace API.Controllers
 
 
         #region SaveChat
-       [HttpPost]
-public async Task<IActionResult> SaveChat([FromForm] Chat chat)
-{
-    var chatId = await _chat.SaveChat(chat);
-    if (chatId > 0)
-    {
-        // Ensure queue exists and publish message to RabbitMQ with delivery status
-        await _rabbitMqService.EnsureQueueExists("chat_messages");
-        await _rabbitMqService.PublishMessage("chat_messages", new
+        [HttpPost]
+        public async Task<IActionResult> SaveChat([FromForm] Chat chat)
         {
-            chatId,
-            chat.Message,
-            chat.SenderId,
-            chat.ReceiverId,
-            Timestamp = DateTime.UtcNow,
-            Status = "sent"
-        });
-        
-        return Ok(new { chatId, status = "sent" });
-    }
-    
-    return BadRequest(new { message = "Failed to save chat" });
-}
+            var chatId = await _chat.SaveChat(chat);
+            if (chatId > 0)
+            {
+                // Ensure queue exists and publish message to RabbitMQ with delivery status
+                await _rabbitMqService.EnsureQueueExists("chat_messages");
+                await _rabbitMqService.PublishMessage("chat_messages", new
+                {
+                    chatId,
+                    chat.Message,
+                    chat.SenderId,
+                    chat.ReceiverId,
+                    Timestamp = DateTime.UtcNow,
+                    Status = "sent"
+                });
+
+                return Ok(new { chatId, status = "sent" });
+            }
+
+            return BadRequest(new { message = "Failed to save chat" });
+        }
         #endregion
 
 
@@ -57,7 +57,7 @@ public async Task<IActionResult> SaveChat([FromForm] Chat chat)
                 _rabbitMqService.AcknowledgeMessages(receiverId.ToString());
                 return Ok(new { data = chats });
             }
-            
+
             return NotFound(new { message = "No chat history found" });
         }
         #endregion
@@ -70,7 +70,7 @@ public async Task<IActionResult> SaveChat([FromForm] Chat chat)
             var chats = await _chat.GetUnreadChats(userId);
             if (chats != null)
                 return Ok(new { data = chats });
-            
+
             return NotFound(new { message = "No unread messages" });
         }
         #endregion
@@ -83,7 +83,7 @@ public async Task<IActionResult> SaveChat([FromForm] Chat chat)
             var result = await _chat.MarkChatAsRead(chatId);
             if (result > 0)
                 return Ok(new { message = "Message marked as read" });
-            
+
             return NotFound(new { message = "Message not found" });
         }
         #endregion
@@ -96,7 +96,7 @@ public async Task<IActionResult> SaveChat([FromForm] Chat chat)
             var result = await _chat.MarkAllChatsAsRead(senderId, receiverId);
             if (result)
                 return Ok(new { message = "All messages marked as read" });
-            
+
             return BadRequest(new { message = "Failed to mark messages as read" });
         }
         #endregion
