@@ -178,8 +178,8 @@
                         receiver = response.data;
                         $('#receiverName').text(`${receiver.firstName} ${receiver.lastName}`);
                         $('#receiverImage').attr('src', `/profile_images/${receiver.image}`);
-                        $('#onlineStatus').html(receiver?.isOnline ? 
-                            `<i class="fa-solid fa-circle-check me-1"></i>Online` : 
+                        $('#onlineStatus').html(receiver?.isOnline ?
+                            `<i class="fa-solid fa-circle-check me-1"></i>Online` :
                             `<i class="fa-solid fa-circle-xmark me-1"></i>Offline`);
                         resolve();
                     },
@@ -199,15 +199,15 @@
             let statusIcon = getStatusIcon(messageStatus);
 
             $("#chat-box").append(`
-                <div class="d-flex ${alignClass} mb-3" data-message-id="${chat.chatId || 'temp'}">
-                    <div class="d-flex flex-column ${bubbleClass} shadow-sm rounded-3 p-3" style="max-width: 75%;">
-                        <div class="message-text">${chat.message}</div>
-                        <small class="text-${chat.senderId == user.userId ? 'white-50' : 'muted'} align-self-end mt-1">
-                            ${timestamp} ${statusIcon}
-                        </small>
+                    <div class="d-flex ${alignClass} mb-3" data-message-id="${chat.chatId || 'temp'}">
+                        <div class="d-flex flex-column ${bubbleClass} shadow-sm rounded-3 p-3" style="max-width: 75%;">
+                            <div class="message-text">${chat.message}</div>
+                            <small class="text-${chat.senderId == user.userId ? 'white-50' : 'muted'} align-self-end mt-1">
+                                ${timestamp} ${statusIcon}
+                            </small>
+                        </div>
                     </div>
-                </div>
-            `);
+                `);
         }
 
         function getStatusIcon(status) {
@@ -324,6 +324,28 @@
                 $('#onlineStatus').html(onlineUsers.includes(receiverId) ?
                     `<i class="fa-solid fa-circle-check me-1"></i>Online` :
                     `<i class="fa-solid fa-circle-xmark me-1"></i>Offline`);
+            });
+
+            connection.on("MessageStatus", function (messageId, status) {
+                console.log("Message status update:", messageId, status);
+                const messageElement = $(`[data-message-id="${messageId}"]`);
+                if (messageElement.length) {
+                    messageElement.find('i').replaceWith(getStatusIcon(status));
+                }
+            });
+
+            connection.on("ReceiveMessage", function (chat) {
+                console.log("Received message:", chat);
+
+                if ($(`[data-message-id="${chat.chatId}"]`).length === 0) {
+                    appendMessage(chat, chat.senderId === user.userId ? 'You' : receiver.firstName);
+                    $("#chat-box").scrollTop($("#chat-box")[0].scrollHeight);
+                }
+
+                if (chat.senderId !== user.userId) {
+                    connection.invoke("AcknowledgeMessage", chat.chatId, chat.senderId)
+                        .catch(err => console.error("Error acknowledging message:", err));
+                }
             });
 
             connection.onreconnecting(() => {
