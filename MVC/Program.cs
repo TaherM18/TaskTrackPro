@@ -3,6 +3,8 @@ using Repositories.Implementations;
 using Repositories.Interfaces;
 using MVC.Filters;
 
+using TaskTrackPro.MVC.Hubs;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -25,7 +27,13 @@ builder.Services.AddSingleton<NpgsqlConnection>((UserRepository) => {
     return new NpgsqlConnection(connectionString);
 });
 
+builder.Services.AddSignalR();
+
+
 var app = builder.Build();
+
+// In your app configuration section:
+app.MapHub<ChatHub>("/chatHub");
 
 app.UseSession();
 

@@ -3,82 +3,170 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container-xl px-4 mt-4">
-    @if (TempData["Message"] != null)
-    {
-        <div class="alert alert-primary alert-dismissible fade show" role="alert">
-            @TempData["Message"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+<style>
+    :root {
+        --primary-color: #133E87;
+        --secondary-color: #608BC1;
+        --background-color: #F3F3E0;
+        --text-color: #333;
     }
-    <div class="row">
-        <div class="col-lg-4">
-            <div class="card mb-4 mb-xl-0">
-                <div class="card-header">Profile Picture</div>
-                <div class="card-body text-center">
-                    <img id="preview" class="rounded-circle mb-2 object-fit-cover border"
-                        src="/profile_images" onerror="this.src='/profile_images/placeholder.jpg'"
-                        alt="Profile Image" width="150" height="150">
-                    <div class="small font-italic text-muted mb-4">JPG or PNG no larger than 5 MB</div>
-                </div>
-            </div>
-        </div>
 
-        <div class="col-lg-8">
-            <div class="card mb-4">
-                <div class="card-header">Account Details</div>
-                <div class="card-body">
-                    <form id="profileForm">
+    body {
+        background-color: var(--background-color);
+        font-family: 'Poppins', sans-serif;
+        color: var(--text-color);
+    }
 
-                        <input type="hidden" name="password" value="password"/>
-                        <input type="hidden" name="image" value="password"/>
-                        <div class="mb-3">
-                            <label class="small mb-1" for="firstName">Full Name</label>
-                            <div class="input-group">
-                                <input type="text" id="firstName" name="firstName" class="form-control" placeholder="Firstname" aria-label="Firstname">
-                                <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Lastname" aria-label="Lastname">
-                            </div>
-                            <span class="row">
-                                <span class="col">
-                                    <small id="msg-firstName" class="text-danger"></small>
-                                </span>
-                                <span class="col">
-                                    <small id="msg-lastName" class="text-danger"></small>
-                                </span>
-                            </span>
-                        </div>
+    .container {
+        max-width: 1350px;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
 
-                        <div class="mb-3">
-                            <label class="small mb-1" for="email">Email Address</label>
-                            <input class="form-control" id="email" name="email" type="email"
-                                placeholder="Enter your email address">
-                            <small id="msg-email" class="text-danger"></small>
-                        </div>
+    .card {
+        border: none;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+    }
 
-                        <div class="mb-3">
-                            <label class="small mb-1" for="imageFile">Profile Image</label>
-                            <input type="file" id="imageFile" name="imageFile" class="form-control">
-                        </div>
+    .card-header {
+        background: var(--secondary-color);
+        color: white;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+        text-align: center;
+        padding: 10px;
+    }
 
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <button class="btn btn-primary mt-3" type="submit">Save Changes</button>
-                            </div>
-                            <div class="col-sm-6">
-                                <a class="btn btn-dark mt-3" href="@Url.Action("ChangePass", "Auth")">Change Password</a>
-                            </div>
-                        </div>
-                        
-                    </form>
-                </div>
-            </div>
-            <div class="mt-2">
-                <a href="@Url.Action("Logout", "Auth")" class="btn btn-danger">Logout</a>
+    /* Profile Image */
+    #preview {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--primary-color);
+        transition: transform 0.3s ease-in-out;
+    }
+
+    #preview:hover {
+        transform: scale(1.05);
+    }
+
+    .profile-info {
+        text-align: center;
+    }
+
+    /* Form Inputs */
+    .form-control {
+        border-radius: 8px;
+        padding: 10px;
+        border: 1px solid var(--primary-color);
+    }
+
+    .form-control:focus {
+        border-color: var(--secondary-color);
+        box-shadow: 0 0 5px var(--secondary-color);
+    }
+
+    /* Buttons */
+    .btn {
+        border-radius: 8px;
+        padding: 10px 15px;
+        font-weight: bold;
+    }
+
+    .btn-primary {
+        background: var(--primary-color);
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background: var(--secondary-color);
+    }
+
+    .btn-dark:hover {
+        background: #222;
+    }
+
+    .btn-danger {
+        background: #C82333;
+        border: none;
+    }
+
+    .btn-danger:hover {
+        background: #A71D2A;
+    }
+</style>
+
+
+<div class="row">
+    <!-- Profile Picture Card -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">Profile Picture</div>
+            <div class="card-body profile-info">
+                <img id="preview" class="rounded-circle mb-2 object-fit-cover border" src="/profile_images"
+                    onerror="this.src='/profile_images/placeholder.jpg'" alt="Profile Image">
+                <div class="small font-italic text-muted">JPG or PNG no larger than 5 MB</div>
             </div>
         </div>
     </div>
-</div>
 
+    <!-- Account Details Card -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">Account Details</div>
+            <div class="card-body">
+                <form id="profileForm">
+                    <input type="hidden" name="password" value="password" />
+                    <input type="hidden" name="image" value="password" />
+
+                    <!-- Full Name -->
+                    <div class="mb-3">
+                        <label class="small mb-1" for="firstName">Full Name</label>
+                        <div class="input-group">
+                            <input type="text" id="firstName" name="firstName" class="form-control"
+                                placeholder="Firstname">
+                            <input type="text" id="lastName" name="lastName" class="form-control"
+                                placeholder="Lastname">
+                        </div>
+                        <small id="msg-firstName" class="text-danger"></small>
+                        <small id="msg-lastName" class="text-danger"></small>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label class="small mb-1" for="email">Email Address</label>
+                        <input class="form-control" id="email" name="email" type="email"
+                            placeholder="Enter your email address">
+                        <small id="msg-email" class="text-danger"></small>
+                    </div>
+
+                    <!-- Profile Image Upload -->
+                    <div class="mb-3">
+                        <label class="small mb-1" for="imageFile">Profile Image</label>
+                        <input type="file" id="imageFile" name="imageFile" class="form-control">
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-4">
+                            <button class="btn btn-primary mt-3" type="submit">Save Changes</button>
+                        </div>
+                        <div class="col-sm-4">
+                            <a class="btn btn-dark mt-3" href="@Url.Action("ChangePass", "Auth")">Change Password</a>
+                        </div>
+                        
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+    </div>
+</div>
 @section Scripts {
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
     <script>
