@@ -43,7 +43,7 @@ namespace API.Services
                      if (onlineUsers.Any())
                     {
                         Console.WriteLine("📌 Current Online Users: " + string.Join(", ", onlineUsers));
-                        await _chatHubContext.Clients.All.SendAsync("ReceiveOnlineUser", onlineUsers);
+                        await _chatHubContext.Clients.All.SendAsync("ReceiveOnlineUsers", onlineUsers);
                     }
                 }
                 catch (Exception ex)
