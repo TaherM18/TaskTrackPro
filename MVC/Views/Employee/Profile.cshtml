@@ -148,11 +148,13 @@
                 rules: {
                     firstName: {
                         required: true,
-                        minlength: 2
+                        minlength: 2,
+                        pattern: /^[A-Za-z]+(?: [A-Za-z]+)*$/
                     },
                     lastName: {
                         required: true,
-                        minlength: 2
+                        minlength: 2,
+                        pattern: /^[A-Za-z]+(?: [A-Za-z]+)*$/
                     },
                     email: {
                         required: true,
