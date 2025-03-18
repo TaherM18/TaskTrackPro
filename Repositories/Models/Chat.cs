@@ -17,7 +17,7 @@ namespace Repositories.Models
         [StringLength(2000)]
         public string Message { get; set; } = "Hello";
 
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public DateTime? Timestamp { get; set; } = DateTime.UtcNow;
 
         public bool IsRead { get; set; } = false;
 
