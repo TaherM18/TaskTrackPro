@@ -265,7 +265,7 @@ function updateMessageList(messages) {
     if (!user) return;
 
     messages = messages.filter(a => a.senderId == user.userId || a.receiverId == user.userId);
-    console.log(messages)
+    // console.log(messages)
 
     // messageList.empty();
 
