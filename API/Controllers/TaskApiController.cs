@@ -23,20 +23,52 @@ namespace API.Controllers
 
         #region Elastic search Task Name, Description, Status
         [HttpGet("search/{query}")]
-        public async Task<IActionResult> SearchTasks(string query)
+        public async Task<IActionResult> SearchTasks(
+            string query, 
+            [FromQuery] string? status = null, 
+            [FromQuery] Guid? userId = null, 
+            [FromQuery] DateTime? dueDate = null,
+            [FromQuery] int? estimatedDaysFilter = null) // New parameter for estimated days filter
         {
             var tasks = await _elasticService.SearchTasksAsync(query);
 
-               var uniqueTasks = tasks.GroupBy(t => t.TaskId).Select(g => g.First()).ToList();
+            if (!tasks.Any())
+            {
+                return NotFound(new { message = "No tasks found." });
+            }
 
-    return uniqueTasks.Any()
-        ? Ok(new { data = uniqueTasks })
-        : NotFound(new { message = "No tasks found." });
-            // return tasks == null || !tasks.Any()
-            //     ? NotFound(new { message = "No tasks found." })
-            //     : Ok(new { data = tasks });
+            // Apply filtering in the controller
+            if (!string.IsNullOrEmpty(status))
+            {
+                tasks = tasks.Where(t => t.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            if (userId.HasValue)
+            {
+                tasks = tasks.Where(t => t.UserId == userId.Value).ToList();
+            }
+
+            if (dueDate.HasValue)
+            {
+                tasks = tasks.Where(t => t.EndDate.HasValue && t.EndDate.Value.ToDateTime(TimeOnly.MinValue) >= dueDate.Value).ToList();
+            }
+
+            // Apply estimated days filter
+            if (estimatedDaysFilter.HasValue)
+            {
+                var estimatedEndDate = DateTime.UtcNow.AddDays(estimatedDaysFilter.Value);
+                tasks = tasks.Where(t => t.EndDate.HasValue && t.EndDate.Value.ToDateTime(TimeOnly.MinValue) <= estimatedEndDate).ToList();
+            }
+
+            // Ensure unique tasks based on TaskId
+            var uniqueTasks = tasks.GroupBy(t => t.TaskId).Select(g => g.First()).ToList();
+
+            return uniqueTasks.Any()
+                ? Ok(new { data = uniqueTasks })
+                : NotFound(new { message = "No tasks found." });
         }
         #endregion
+
 
         #region Get: Get All
         [HttpGet]

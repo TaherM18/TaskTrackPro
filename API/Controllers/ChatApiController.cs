@@ -2,8 +2,6 @@ using API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Repositories.Interfaces;
 using Repositories.Models;
-using Microsoft.AspNetCore.SignalR;
-
 
 namespace API.Controllers
 {
@@ -13,11 +11,9 @@ namespace API.Controllers
     {
         private readonly IChatInterface _chat;
         private readonly RabbitMqService _rabbitMqService;
-        private readonly IHubContext<ChatHub> _hubContext;
 
-        public ChatApiController(IChatInterface chat, RabbitMqService rabbitMqService, IHubContext<ChatHub> hubContext)
+        public ChatApiController(IChatInterface chat, RabbitMqService rabbitMqService)
         {
-            _hubContext = hubContext;
             _chat = chat;
             _rabbitMqService = rabbitMqService;
         }
@@ -41,10 +37,10 @@ namespace API.Controllers
                     Timestamp = DateTime.UtcNow,
                     Status = "sent"
                 });
-                await _hubContext.Clients.All.SendAsync("ReceiveMessage", chat);
+                
                 return Ok(new { chatId, status = "sent" });
             }
-
+            
             return BadRequest(new { message = "Failed to save chat" });
         }
         #endregion
@@ -61,7 +57,7 @@ namespace API.Controllers
                 _rabbitMqService.AcknowledgeMessages(receiverId.ToString());
                 return Ok(new { data = chats });
             }
-
+            
             return NotFound(new { message = "No chat history found" });
         }
         #endregion
@@ -74,7 +70,7 @@ namespace API.Controllers
             var chats = await _chat.GetUnreadChats(userId);
             if (chats != null)
                 return Ok(new { data = chats });
-
+            
             return NotFound(new { message = "No unread messages" });
         }
         #endregion
@@ -87,7 +83,7 @@ namespace API.Controllers
             var result = await _chat.MarkChatAsRead(chatId);
             if (result > 0)
                 return Ok(new { message = "Message marked as read" });
-
+            
             return NotFound(new { message = "Message not found" });
         }
         #endregion
@@ -100,7 +96,7 @@ namespace API.Controllers
             var result = await _chat.MarkAllChatsAsRead(senderId, receiverId);
             if (result)
                 return Ok(new { message = "All messages marked as read" });
-
+            
             return BadRequest(new { message = "Failed to mark messages as read" });
         }
         #endregion
