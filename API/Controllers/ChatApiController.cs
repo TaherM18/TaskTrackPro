@@ -20,29 +20,53 @@ namespace API.Controllers
 
 
         #region SaveChat
-       [HttpPost]
-public async Task<IActionResult> SaveChat([FromForm] Chat chat)
-{
-    var chatId = await _chat.SaveChat(chat);
-    if (chatId > 0)
-    {
-        // Ensure queue exists and publish message to RabbitMQ with delivery status
-        await _rabbitMqService.EnsureQueueExists("chat_messages");
-        await _rabbitMqService.PublishMessage("chat_messages", new
+        // Update the SaveChat method to send a notification
+        [HttpPost]
+        public async Task<IActionResult> SaveChat([FromForm] Chat chat)
         {
-            chatId,
-            chat.Message,
-            chat.SenderId,
-            chat.ReceiverId,
-            Timestamp = DateTime.UtcNow,
-            Status = "sent"
-        });
-        
-        return Ok(new { chatId, status = "sent" });
-    }
-    
-    return BadRequest(new { message = "Failed to save chat" });
-}
+            var chatId = await _chat.SaveChat(chat);
+            if (chatId > 0)
+            {
+                // Ensure queue exists and publish message to RabbitMQ with delivery status
+                await _rabbitMqService.EnsureQueueExists("chat_messages");
+                await _rabbitMqService.PublishMessage("chat_messages", new
+                {
+                    chatId,
+                    chat.Message,
+                    chat.SenderId,
+                    chat.ReceiverId,
+                    Timestamp = DateTime.UtcNow,
+                    Status = "sent"
+                });
+                
+                // Send notification to both sender and receiver about the new message
+                var notificationHub = HttpContext.RequestServices.GetRequiredService<IHubContext<NotificationHub>>();
+                await notificationHub.Clients.Group(chat.ReceiverId.ToString()).SendAsync("ReceiveNotification", new
+                {
+                    type = "chat",
+                    chatId,
+                    chat.Message,
+                    chat.SenderId,
+                    chat.ReceiverId,
+                    Timestamp = DateTime.UtcNow
+                });
+                
+                // Also notify the sender for UI update
+                await notificationHub.Clients.Group(chat.SenderId.ToString()).SendAsync("ReceiveNotification", new
+                {
+                    type = "chat",
+                    chatId,
+                    chat.Message,
+                    chat.SenderId,
+                    chat.ReceiverId,
+                    Timestamp = DateTime.UtcNow
+                });
+                
+                return Ok(new { chatId, status = "sent" });
+            }
+            
+            return BadRequest(new { message = "Failed to save chat" });
+        }
         #endregion
 
 

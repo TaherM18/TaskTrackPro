@@ -346,10 +346,16 @@
     
     // Update document ready function to add window events
     $(document).ready(function () {
+        let notificationConnection;
+        
         loadReceiverData()
         .then(() => {
             loadChatHistory();
             startSignalRConnection();
+            return startNotificationConnection();
+        })
+        .then(conn => {
+            notificationConnection = conn;
         });
     
         $("#chatForm").on("submit", function (e) {
@@ -368,6 +374,9 @@
             if (connection) {
                 // Try to gracefully disconnect
                 connection.stop().catch(() => {});
+            }
+            if (notificationConnection) {
+                notificationConnection.stop().catch(() => {});
             }
         });
     });
