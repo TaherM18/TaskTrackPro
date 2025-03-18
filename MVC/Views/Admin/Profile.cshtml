@@ -16,9 +16,9 @@
             <div class="card mb-4 mb-xl-0">
                 <div class="card-header">Profile Picture</div>
                 <div class="card-body text-center">
-                    <img id="preview" class="rounded-circle mb-2 object-fit-cover border"
-                        src="/profile_images" onerror="this.src='/profile_images/placeholder.jpg'"
-                        alt="Profile Image" width="150" height="150">
+                    <img id="preview" class="rounded-circle mb-2 object-fit-cover border" src="/profile_images"
+                        onerror="this.src='/profile_images/placeholder.jpg'" alt="Profile Image" width="150"
+                        height="150">
                     <div class="small font-italic text-muted mb-4">JPG or PNG no larger than 5 MB</div>
                 </div>
             </div>
@@ -30,13 +30,19 @@
                 <div class="card-body">
                     <form id="profileForm">
 
-                        <input type="hidden" name="password" value="password"/>
-                        <input type="hidden" name="image" value="password"/>
+                        <input type="hidden" name="password" value="password" />
+                        <input type="hidden" name="image" value="password" />
                         <div class="mb-3">
                             <label class="small mb-1" for="firstName">Full Name</label>
                             <div class="input-group">
-                                <input type="text" id="firstName" name="firstName" class="form-control" placeholder="Firstname" aria-label="Firstname">
-                                <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Lastname" aria-label="Lastname">
+                                <input type="text" id="firstName" name="firstName" class="form-control"
+                                    placeholder="Firstname" pattern="[A-Za-z]+"
+                                    title="Only alphabetic characters are allowed" required
+                                    oninput="validateInput(this)" aria-label="Firstname">
+                                <input type="text" id="lastName" name="lastName" class="form-control"
+                                    placeholder="Lastname" pattern="[A-Za-z]+"
+                                    title="Only alphabetic characters are allowed" required
+                                    oninput="validateInput(this)" aria-label="Lastname">
                             </div>
                             <span class="row">
                                 <span class="col">
@@ -65,10 +71,11 @@
                                 <button class="btn btn-primary mt-3" type="submit">Save Changes</button>
                             </div>
                             <div class="col-sm-6">
-                                <a class="btn btn-dark mt-3" href="@Url.Action("ChangePass", "Auth")">Change Password</a>
+                                <a class="btn btn-dark mt-3" href="@Url.Action("ChangePass", "Auth")">Change
+                                    Password</a>
                             </div>
                         </div>
-                        
+
                     </form>
                 </div>
             </div>
@@ -80,10 +87,19 @@
 </div>
 
 @section Scripts {
-    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
     <script>
         const user = JSON.parse(sessionStorage.getItem("user"));
         const baseUrl = "http://localhost:5267/api/user";
+
+        // Allow only alphabetic characters using regex
+        $.validator.addMethod("lettersOnly", function (value, element) {
+            return this.optional(element) || /^[A-Za-z]+$/.test(value);
+        }, "Only alphabetic characters are allowed");
+
+
         //
         function loadUserData() {
             $.ajax({
@@ -128,7 +144,7 @@
                         showConfirmButton: false
                     });
                 },
-                error: function(xhr, status, error) {
+                error: function (xhr, status, error) {
                     Swal.fire({
                         title: "Oops",
                         text: error,
@@ -140,7 +156,7 @@
             });
         }
         //
-        $(document).ready(function() {
+        $(document).ready(function () {
             loadUserData();
 
             // Form validation rules
@@ -148,11 +164,15 @@
                 rules: {
                     firstName: {
                         required: true,
-                        minlength: 2
+                        minlength: 2,
+                        lettersOnly: true
                     },
                     lastName: {
                         required: true,
-                        minlength: 2
+                        minlength: 2,
+                        lettersOnly: true
+
+
                     },
                     email: {
                         required: true,
@@ -162,26 +182,34 @@
                 messages: {
                     firstName: {
                         required: "Please enter your first name",
-                        minlength: "First name must be at least 2 characters"
+                        minlength: "First name must be at least 2 characters",
+                        lettersOnly: "Only alphabetic characters are allowed"
                     },
                     lastName: {
                         required: "Please enter your last name",
-                        minlength: "Last name must be at least 2 characters"
+                        minlength: "Last name must be at least 2 characters",
+                        lettersOnly: "Only alphabetic characters are allowed"
+
+
                     },
                     email: {
                         required: "Please enter your email",
                         email: "Please enter a valid email address"
                     }
                 },
-                errorPlacement: function(error, element) {
+                errorClass: "text-danger",
+                errorPlacement: function (error, element) {
+                    error.insertAfter(element);
+                },
+                errorPlacement: function (error, element) {
                     const msgId = "#msg-" + $(element).attr("name");
                     $(msgId).removeClass('text-success').addClass('text-danger').text(error.text());
                 },
-                highlight: function(element) {
+                highlight: function (element) {
                     // error
                     $(element).removeClass('is-valid').addClass('is-invalid');
                 },
-                unhighlight: function(element) {
+                unhighlight: function (element) {
                     // success
                     $(element).removeClass('is-invalid').addClass('is-valid');
                     const msgId = "#msg-" + $(element).attr("name");
@@ -193,11 +221,16 @@
                 }
             });
 
+            // Real-time filtering for alphabets only
+            function validateInput(input) {
+                input.value = input.value.replace(/[^A-Za-z]/g, '');
+            }
+
             // Image preview
-            $("#imageFile").change(function() {
+            $("#imageFile").change(function () {
                 let file = this.files[0];
                 let reader = new FileReader(file);
-                reader.onload = function(e) {
+                reader.onload = function (e) {
                     $("#preview").attr("src", e.target.result);
                 }
                 reader.readAsDataURL(file);
