@@ -220,6 +220,12 @@ function loadUnreadMessages() {
 
 function updateMessageList(messages) {
     const messageList = $("#messageList");
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    if (!user) return;
+
+    messages = messages.filter(a => a.senderId == user.userId || a.receiverId == user.userId);
+    console.log(messages)
+
     // messageList.empty();
 
     if (!messages || messages.length === 0) {
@@ -231,6 +237,10 @@ function updateMessageList(messages) {
         `);
         $("#messageCount").hide();
         return;
+    }
+
+    if (firstLoad) {
+        notificationList.html(""); // Clear existing content only on first load
     }
 
     messages.forEach(msg => {
@@ -259,6 +269,7 @@ function updateMessageList(messages) {
     });
 
     $("#messageCount").text(messages.length).show();
+    firstLoad = false;
 }
 
 function markChatAsRead(chatId, button) {

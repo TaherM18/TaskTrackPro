@@ -75,8 +75,9 @@ namespace API.Services
                         {
                             Console.WriteLine($"💬 {chats.Count} unread chat messages found!");
 
+                            var sortedChats = chats.OrderBy(n => n.Timestamp);
                             // Group messages by ReceiverId (UserId)
-                            var groupedChats = chats.GroupBy(c => c.ReceiverId);
+                            var groupedChats = sortedChats.GroupBy(c => c.ReceiverId);
                             foreach (var group in groupedChats)
                             {
                                 string receiverId = group.Key.ToString();
