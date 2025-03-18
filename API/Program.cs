@@ -37,6 +37,8 @@ builder.Services.AddCors(options =>
             .AllowCredentials());
 });
 
+builder.Services.AddHostedService<NotificationBackgroundService>();
+
 // Repositories
 builder.Services.AddScoped<IUserInterface, UserRepository>();
 builder.Services.AddScoped<ITaskInterface, TaskRepository>();

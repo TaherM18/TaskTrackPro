@@ -25,6 +25,7 @@ namespace Repositories.Implementations
             try
             {
 
+                await _con.CloseAsync();
                 await _con.OpenAsync();
                 using var cmd = new NpgsqlCommand(query, _con);
                 cmd.Parameters.AddWithValue("@userId", userId);
@@ -58,6 +59,51 @@ namespace Repositories.Implementations
         }
         #endregion
 
+        #region GetAllUnreadNotifications
+        public async Task<List<Notification>> GetAllUnreadNotifications()
+        {
+            var notifications = new List<Notification>();
+            var query = @"
+        SELECT c_notificationid, c_userid, c_title, c_description, c_type, c_isread, c_created_at 
+        FROM ttp.t_notification 
+        WHERE c_isread = false
+        ORDER BY c_created_at DESC";
+
+            try
+            {
+                await _con.CloseAsync();
+                await _con.OpenAsync();
+                using var cmd = new NpgsqlCommand(query, _con);
+
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    notifications.Add(new Notification
+                    {
+                        NotificationId = reader.GetInt32(0),
+                        UserId = reader.GetGuid(1),
+                        Title = reader.GetString(2),
+                        Description = reader.GetString(3),
+                        Type = reader.GetString(4),
+                        IsRead = reader.GetBoolean(5),
+                        CreatedAt = reader.GetDateTime(6)
+                    });
+                }
+
+                return notifications;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"NotificationRepository - GetAllUnreadNotifications() - {ex.Message}");
+                return new List<Notification>();
+            }
+            finally
+            {
+                await _con.CloseAsync();
+            }
+        }
+        #endregion
+
 
         #region GetAllByUnreadUserId
         public async Task<List<Notification>?> GetAllUnreadByUserId(Guid userId)
@@ -71,6 +117,7 @@ namespace Repositories.Implementations
             try
             {
 
+                await _con.CloseAsync();
                 await _con.OpenAsync();
                 using var cmd = new NpgsqlCommand(query, _con);
                 cmd.Parameters.AddWithValue("@userId", userId);
@@ -112,6 +159,7 @@ namespace Repositories.Implementations
 
             try
             {
+                await _con.CloseAsync();
                 await _con.OpenAsync();
                 using var cmd = new NpgsqlCommand(query, _con);
                 cmd.Parameters.AddWithValue("@notificationId", notificationId);
@@ -135,7 +183,8 @@ namespace Repositories.Implementations
         {
             var query = "UPDATE ttp.t_notification SET c_isread = true WHERE c_userid = @userId AND c_isread = false";
 
-            try{
+            try
+            {
                 await _con.OpenAsync();
                 using var cmd = new NpgsqlCommand(query, _con);
                 cmd.Parameters.AddWithValue("@userId", userId);

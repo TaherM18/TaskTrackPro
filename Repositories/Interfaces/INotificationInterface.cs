@@ -10,5 +10,7 @@ namespace Repositories.Interfaces
         Task<bool> MarkAsRead(int notificationId);
         Task<bool> MarkAllAsRead(Guid userId);
         Task<int> Add(Notification notification);
+
+        public Task<List<Notification>> GetAllUnreadNotifications();
     }
 }
