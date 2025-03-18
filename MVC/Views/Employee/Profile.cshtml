@@ -35,8 +35,12 @@
                         <div class="mb-3">
                             <label class="small mb-1" for="firstName">Full Name</label>
                             <div class="input-group">
-                                <input type="text" id="firstName" name="firstName" class="form-control" placeholder="Firstname" aria-label="Firstname">
-                                <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Lastname" aria-label="Lastname">
+                                <input type="text" id="firstName" name="firstName" class="form-control" placeholder="Firstname" pattern="[A-Za-z]+"
+                                    title="Only alphabetic characters are allowed" required
+                                    oninput="validateInput(this)"  aria-label="Firstname">
+                                <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Lastname" pattern="[A-Za-z]+"
+                                    title="Only alphabetic characters are allowed" required
+                                    oninput="validateInput(this)" aria-label="Lastname">
                             </div>
                             <span class="row">
                                 <span class="col">
@@ -84,6 +88,13 @@
     <script>
         const user = JSON.parse(sessionStorage.getItem("user"));
         const baseUrl = "http://localhost:5267/api/user";
+
+        // Allow only alphabetic characters using regex
+        $.validator.addMethod("lettersOnly", function (value, element) {
+            return this.optional(element) || /^[A-Za-z]+$/.test(value);
+        }, "Only alphabetic characters are allowed");
+
+
         //
         function loadUserData() {
             $.ajax({
@@ -149,12 +160,14 @@
                     firstName: {
                         required: true,
                         minlength: 2,
-                        pattern: /^[A-Za-z]+(?: [A-Za-z]+)*$/
+                        lettersOnly: "Only alphabetic characters are allowed"
+
                     },
                     lastName: {
                         required: true,
                         minlength: 2,
-                        pattern: /^[A-Za-z]+(?: [A-Za-z]+)*$/
+                        lettersOnly: "Only alphabetic characters are allowed"
+
                     },
                     email: {
                         required: true,
@@ -175,6 +188,7 @@
                         email: "Please enter a valid email address"
                     }
                 },
+                   errorClass: "text-danger",
                 errorPlacement: function(error, element) {
                     const msgId = "#msg-" + $(element).attr("name");
                     $(msgId).removeClass('text-success').addClass('text-danger').text(error.text());
@@ -194,6 +208,11 @@
                     handleFormSubmit();
                 }
             });
+
+              // Real-time filtering for alphabets only
+            function validateInput(input) {
+                input.value = input.value.replace(/[^A-Za-z]/g, '');
+            }
 
             // Image preview
             $("#imageFile").change(function() {
