@@ -2,7 +2,6 @@
     ViewData["Title"] = "Profile";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-
 <style>
     :root {
         --primary-color: #133E87;
@@ -123,18 +122,27 @@
                     <input type="hidden" name="password" value="password" />
                     <input type="hidden" name="image" value="password" />
 
-                    <!-- Full Name -->
-                    <div class="mb-3">
-                        <label class="small mb-1" for="firstName">Full Name</label>
-                        <div class="input-group">
-                            <input type="text" id="firstName" name="firstName" class="form-control"
-                                placeholder="Firstname">
-                            <input type="text" id="lastName" name="lastName" class="form-control"
-                                placeholder="Lastname">
+                        <input type="hidden" name="password" value="password"/>
+                        <input type="hidden" name="image" value="password"/>
+                        <div class="mb-3">
+                            <label class="small mb-1" for="firstName">Full Name</label>
+                            <div class="input-group">
+                                <input type="text" id="firstName" name="firstName" class="form-control" placeholder="Firstname" pattern="[A-Za-z]+"
+                                    title="Only alphabetic characters are allowed" required
+                                    oninput="validateInput(this)"  aria-label="Firstname">
+                                <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Lastname" pattern="[A-Za-z]+"
+                                    title="Only alphabetic characters are allowed" required
+                                    oninput="validateInput(this)" aria-label="Lastname">
+                            </div>
+                            <span class="row">
+                                <span class="col">
+                                    <small id="msg-firstName" class="text-danger"></small>
+                                </span>
+                                <span class="col">
+                                    <small id="msg-lastName" class="text-danger"></small>
+                                </span>
+                            </span>
                         </div>
-                        <small id="msg-firstName" class="text-danger"></small>
-                        <small id="msg-lastName" class="text-danger"></small>
-                    </div>
 
                     <!-- Email -->
                     <div class="mb-3">
@@ -169,9 +177,6 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
@@ -230,7 +235,6 @@
                     });
                 },
                 error: function (xhr, status, error) {
-                error: function (xhr, status, error) {
                     Swal.fire({
                         title: "Oops",
                         text: error,
@@ -242,7 +246,6 @@
             });
         }
         //
-        $(document).ready(function () {
         $(document).ready(function () {
             loadUserData();
 
@@ -284,16 +287,18 @@
                         email: "Please enter a valid email address"
                     }
                 },
+                errorClass: "text-danger",
+                errorPlacement: function (error, element) {
+                    error.insertAfter(element);
+                },
                 errorPlacement: function (error, element) {
                     const msgId = "#msg-" + $(element).attr("name");
                     $(msgId).removeClass('text-success').addClass('text-danger').text(error.text());
                 },
                 highlight: function (element) {
-                highlight: function (element) {
                     // error
                     $(element).removeClass('is-valid').addClass('is-invalid');
                 },
-                unhighlight: function (element) {
                 unhighlight: function (element) {
                     // success
                     $(element).removeClass('is-invalid').addClass('is-valid');
@@ -313,10 +318,8 @@
 
             // Image preview
             $("#imageFile").change(function () {
-            $("#imageFile").change(function () {
                 let file = this.files[0];
                 let reader = new FileReader(file);
-                reader.onload = function (e) {
                 reader.onload = function (e) {
                     $("#preview").attr("src", e.target.result);
                 }

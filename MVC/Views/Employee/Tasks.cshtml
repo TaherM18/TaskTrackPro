@@ -205,10 +205,11 @@
         // function to load tasks
         function loadTaskData() {
             $.ajax({
-                url: `${baseUrl}/user/${user.userId}`,
+                url: `${baseUrl}/task/user/${user.userId}`,
                 type: 'GET',
                 dataType: 'json',
                 success: function (response) {
+                    console.log("Received tasks:", response.data);
                     $('#taskTreeView').empty();
 
                     
@@ -236,7 +237,7 @@
                             $('#taskTreeView').append(`
                                 <div class="accordion-item">
                                     <h2 class="accordion-header">
-                                        <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" 
+                                        <button class="accordion-button ${index === -1 ? '' : 'collapsed'}" 
                                                 type="button" 
                                                 data-bs-toggle="collapse" 
                                                 data-bs-target="#${accordionId}">
@@ -248,7 +249,7 @@
                                         </button>
                                     </h2>
                                     <div id="${accordionId}" 
-                                         class="accordion-collapse collapse ${index === 0 ? 'show' : ''}"
+                                         class="accordion-collapse collapse ${index === -1 ? 'show' : ''}"
                                          data-bs-parent="#taskTreeView">
                                         <div class="accordion-body p-0">
                                             <div class="list-group list-group-flush">
