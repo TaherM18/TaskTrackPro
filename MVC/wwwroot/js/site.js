@@ -121,6 +121,8 @@ let firstLoad = true;
 
 function updateNotificationList(notifications) {
     const notificationList = $("#notificationList");
+    const user = JSON.parse(sessionStorage.getItem("user")); // Add user variable declaration
+    if (!user) return;
 
     notifications = notifications.filter(a => a.userId == user.userId);
 
@@ -282,7 +284,7 @@ function updateMessageList(messages) {
     }
 
     if (firstLoad) {
-        notificationList.html(""); // Clear existing content only on first load
+        messageList.html(""); // Fix: Changed from notificationList to messageList
     }
 
     messages.forEach(msg => {
@@ -345,10 +347,27 @@ function goToChat(senderId) {
 
 // DOCUMENT READY FUCNTION ==============================================
 
-$(document).ready(function () {
-    loadNotifications()
-    loadUnreadMessages();
+let notificationConnection = null;
+let chatConnection = null;
 
+$(document).ready(function () {
+    // Declare htmlContent with let to avoid global scope pollution
+    let htmlContent = "";
+    
+    // Set profile div first to ensure user info is displayed correctly
+    setProfileDiv();
+    
+    // Check identity and access
+    checkIdentityAndAccess();
+    
+    // Initialize connections only if they don't exist
+    if (!notificationConnection) {
+        loadNotifications();
+    }
+    
+    if (!chatConnection) {
+        loadUnreadMessages();
+    }
 
     // Handle notification click events
     $(document).on('click', '.notification-item', function () {
@@ -357,9 +376,48 @@ $(document).ready(function () {
     });
 });
 
-// ========================================================================
+// Modify loadNotifications to store the connection
+function loadNotifications() {
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    if (!user) return;
 
-// Important
-checkIdentityAndAccess();
-//
-setProfileDiv();
+    notificationConnection = new signalR.HubConnectionBuilder()
+        .withUrl("http://localhost:5267/notificationHub") 
+        .withAutomaticReconnect()
+        .build();
+
+    notificationConnection.start()
+        .then(() => {
+            console.log("Connected to notification hub");
+        })
+        .catch(err => console.error("SignalR notification connection failed: ", err));
+
+    notificationConnection.on("ReceiveNotifications", function (notification) {
+        updateNotificationList(notification);
+    });
+}
+
+// Modify loadUnreadMessages to store the connection
+function loadUnreadMessages() {
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    if (!user) return;
+
+    chatConnection = new signalR.HubConnectionBuilder()
+        .withUrl(`http://localhost:5267/chatHub`)
+        .withAutomaticReconnect()
+        .build();
+
+    chatConnection.start()
+        .then(() => {
+            console.log("Connected to chat hub");
+        })
+        .catch(err => console.error("SignalR chat connection failed: ", err));
+
+    chatConnection.on("ReceiveMessages", function (notification) {
+        updateMessageList(notification);
+    });
+}
+
+// Remove the duplicate calls at the end of the file since they're now in document.ready
+// checkIdentityAndAccess();
+// setProfileDiv();
