@@ -26,9 +26,15 @@ namespace API.Controllers
         public async Task<IActionResult> SearchTasks(string query)
         {
             var tasks = await _elasticService.SearchTasksAsync(query);
-            return tasks == null || !tasks.Any()
-                ? NotFound(new { message = "No tasks found." })
-                : Ok(new { data = tasks });
+
+               var uniqueTasks = tasks.GroupBy(t => t.TaskId).Select(g => g.First()).ToList();
+
+    return uniqueTasks.Any()
+        ? Ok(new { data = uniqueTasks })
+        : NotFound(new { message = "No tasks found." });
+            // return tasks == null || !tasks.Any()
+            //     ? NotFound(new { message = "No tasks found." })
+            //     : Ok(new { data = tasks });
         }
         #endregion
 
