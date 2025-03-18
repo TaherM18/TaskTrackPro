@@ -1,7 +1,7 @@
 @model Repositories.Models.ChangePasswordVM
 @{
     ViewData["Title"] = "Change Password";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "~/Views/Shared/_HomeLayout.cshtml";
 }
 
 <style>
@@ -137,29 +137,28 @@
 
             <!-- Back to Profile Button -->
             <div class="mt-4 text-center">
-                <a class="btn btn-primary" href="@Url.Action("Profile", "Employee")">Back to Profile</a>
+                <button class="btn btn-primary" id="btnProfile">Back to Profile</button>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-    function togglePassword(element) {
-        let input = element.previousElementSibling;
-        if (input.type === "password") {
-            input.type = "text";
-            element.textContent = "🙈";
-        } else {
-            input.type = "password";
-            element.textContent = "👁";
-        }
-    }
-</script>
 @section Scripts {
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 
     <script>
         const user = JSON.parse(sessionStorage.getItem("user"));
+        if (user == null) {
+            Swal.fire({
+                title: "Unauthorized access",
+                text: "Redirecting...",
+                icon: "error",
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.assign("/Auth/Login");
+            });
+        }
         //
 
         function handleFormSubmit() {
@@ -213,6 +212,17 @@
                 }
             });
         }
+
+        function togglePassword(element) {
+            let input = element.previousElementSibling;
+            if (input.type === "password") {
+                input.type = "text";
+                element.textContent = "🙈";
+            } else {
+                input.type = "password";
+                element.textContent = "👁";
+            }
+        }
         
         //
 
@@ -265,6 +275,20 @@
                 submitHandler: function (form, event) {
                     event.preventDefault();
                     handleFormSubmit();
+                }
+            });
+
+            $('$btnProfile').on('click', function() {
+                switch (user.role) {
+                    case "A":
+                        window.location.assign("/Admin/Profile");
+                        break;
+                    case "E":
+                        window.location.assign("/Employee/Profile");
+                        break;
+                    default:
+                        console.log("Unauthorized user");
+                        break;
                 }
             });
         });

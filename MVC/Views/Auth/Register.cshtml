@@ -197,27 +197,6 @@
             return formData;
         }
 
-        // function to send admin notification
-        function sendAdminNotification(title, description, type = "alert") {
-            return new Promise((resolve, reject) => {
-                const notification = {
-                    userId: "9d5c1ce8-e30e-4861-b144-61212b455b40", // Admin's userId
-                    title: title,
-                    description: description,
-                    type: type
-                };
-
-                $.ajax({
-                    url: 'http://localhost:5267/api/notification',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(notification),
-                    success: resolve,
-                    error: reject
-                });
-            });
-        }
-
         function handleFormSubmit() {
             const formData = getFormData();
             $.ajax({

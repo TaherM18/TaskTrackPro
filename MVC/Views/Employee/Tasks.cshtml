@@ -124,11 +124,10 @@
                 
                 <div class="modal-body">
                     <form id="taskForm" class="needs-validation" novalidate>
+                        <input type="hidden" id="userId" readonly required />
                         <div class="mb-3">
-                            <label for="userId" class="form-label">Assign To</label>
-                            <select class="form-select" id="userId" required>
-                                <option value="">Select Employee</option>
-                            </select>
+                            <label for="userName" class="form-label">Assigned To</label>
+                            <input class="form-control" id="userName" readonly required />
                             <div class="invalid-feedback">
                                 Please select an employee
                             </div>
@@ -237,7 +236,7 @@
                             $('#taskTreeView').append(`
                                 <div class="accordion-item">
                                     <h2 class="accordion-header">
-                                        <button class="accordion-button ${index === -1 ? '' : 'collapsed'}" 
+                                        <button class="accordion-button aria-expanded="true"" 
                                                 type="button" 
                                                 data-bs-toggle="collapse" 
                                                 data-bs-target="#${accordionId}">
@@ -249,7 +248,7 @@
                                         </button>
                                     </h2>
                                     <div id="${accordionId}" 
-                                         class="accordion-collapse collapse ${index === -1 ? 'show' : ''}"
+                                         class="accordion-collapse collapse show"
                                          data-bs-parent="#taskTreeView">
                                         <div class="accordion-body p-0">
                                             <div class="list-group list-group-flush">
@@ -276,7 +275,7 @@
                                                                 <button class="btn btn-outline-primary btn-edit" data-id="${task.taskId}">
                                                                     <i class="fas fa-edit"></i>
                                                                 </button>
-                                                                <button class="btn btn-outline-danger btn-delete" data-id="${task.taskId}">
+                                                                <button class="btn btn-outline-danger btn-delete" data-id="${task.taskId}" data-title="${task.title}">
                                                                     <i class="fas fa-trash"></i>
                                                                 </button>
                                                             </div>
@@ -343,7 +342,7 @@
                             $('#taskTreeView').append(`
                                 <div class="accordion-item">
                                     <h2 class="accordion-header">
-                                        <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" 
+                                        <button class="accordion-button aria-expanded="true"" 
                                                 type="button" 
                                                 data-bs-toggle="collapse" 
                                                 data-bs-target="#${accordionId}">
@@ -355,7 +354,7 @@
                                         </button>
                                     </h2>
                                     <div id="${accordionId}" 
-                                         class="accordion-collapse collapse ${index === 0 ? 'show' : ''}"
+                                         class="accordion-collapse collapse show"
                                          data-bs-parent="#taskTreeView">
                                         <div class="accordion-body p-0">
                                             <div class="list-group list-group-flush">
@@ -382,7 +381,7 @@
                                                                 <button class="btn btn-outline-primary btn-edit" data-id="${task.taskId}">
                                                                     <i class="fas fa-edit"></i>
                                                                 </button>
-                                                                <button class="btn btn-outline-danger btn-delete" data-id="${task.taskId}">
+                                                                <button class="btn btn-outline-danger btn-delete" data-id="${task.taskId}" data-title="${task.title}">
                                                                     <i class="fas fa-trash"></i>
                                                                 </button>
                                                             </div>
@@ -480,14 +479,24 @@
                 contentType: 'application/json',
                 data: JSON.stringify(taskData),
                 success: function(response) {
-                    $('#taskModal').modal('hide');
-                    $('#alert').removeClass().addClass('alert alert-success')
-                        .text(taskId ? 'Task updated successfully!' : 'Task added successfully!').show();
-                    setTimeout(function() {
-                        $('#alert').hide();
-                    }, 2000);
-                    loadTaskData();
-                    $('#taskForm').removeClass('was-validated');
+                    const fullName = `${user.firstName} ${user.lastName}`;
+                    //
+                    sendAdminNotification(
+                        method == "POST" ? "New Task Added" : "Task Updated",
+                        method == "POST" ? `${fullName} created a new task: ${taskData.title}.` : `${fullName} updated task: ${taskData.title}.`,
+                        "task"
+                    ).finally(() => {
+                        // Show success message regardless of notification status
+                        Swal.fire({
+                            title: method == "POST" ? "New Task Added" : "Task Updated",
+                            icon: "success",
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        $('#taskModal').modal('hide');
+                        loadTaskData();
+                        $('#taskForm').removeClass('was-validated');
+                    });
                 },
                 error: function(error) {
                     console.error('Error saving task:', error);
@@ -628,28 +637,48 @@
             // Delete Task
             $(document).on('click', '.btn-delete', function() {
                 const taskId = $(this).data('id');
-                if (confirm('Are you sure you want to delete this task?')) {
-                    $.ajax({
-                        url: `${baseUrl}/task/${taskId}`,
-                        type: 'DELETE',
-                        success: function(response) {
-                            $('#alert').removeClass().addClass('alert alert-success')
-                                .text('Task deleted successfully!').show();
-                            setTimeout(function() {
-                                $('#alert').hide();
-                            }, 2000);
-                            loadTaskData();
-                        },
-                        error: function(error) {
-                            console.error('Error deleting task:', error);
-                            $('#alert').removeClass().addClass('alert alert-danger')
-                                .text('Error deleting task').show();
-                            setTimeout(function() {
-                                $('#alert').hide();
-                            }, 2000);
-                        }
-                    });
-                }
+                const taskTitle = $(this).data('title');
+
+                Swal.fire({
+                    title: "Are you sure you want to delete this task?",
+                    text: taskTitle,
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#133E87",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, delete it!"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: `${baseUrl}/task/${taskId}`,
+                            type: 'DELETE',
+                            success: function(response) {
+                                const fullName = `${user.firstName} ${user.lastName}`;
+                                //
+                                sendAdminNotification(
+                                    "Task Deleted",
+                                    `${fullName} deleted task: ${taskTitle}.`,
+                                ).finally(() => {
+                                    Swal.fire({
+                                        title: "Task Deleted",
+                                        icon: "success",
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    });
+                                    loadTaskData();
+                                });
+                            },
+                            error: function(error) {
+                                console.error('Error deleting task:', error);
+                                $('#alert').removeClass().addClass('alert alert-danger')
+                                    .text('Error deleting task').show();
+                                setTimeout(function() {
+                                    $('#alert').hide();
+                                }, 2000);
+                            }
+                        });
+                    }
+                });
             });
 
             // Event Listeners for Start and End Date Changes

@@ -2,6 +2,7 @@
     ViewData["Title"] = "Profile";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
+@section Styles {
 <style>
     :root {
         --primary-color: #133E87;
@@ -98,7 +99,7 @@
         background: #A71D2A;
     }
 </style>
-
+}
 
 <div class="row">
     <!-- Profile Picture Card -->
@@ -123,7 +124,7 @@
                     <input type="hidden" name="image" value="password" />
 
                         <input type="hidden" name="password" value="password"/>
-                        <input type="hidden" name="image" value="password"/>
+                        <input type="hidden" name="image" value="image"/>
                         <div class="mb-3">
                             <label class="small mb-1" for="firstName">Full Name</label>
                             <div class="input-group">
@@ -261,8 +262,6 @@
                         required: true,
                         minlength: 2,
                         lettersOnly: true
-
-
                     },
                     email: {
                         required: true,
@@ -279,17 +278,11 @@
                         required: "Please enter your last name",
                         minlength: "Last name must be at least 2 characters",
                         lettersOnly: "Only alphabetic characters are allowed"
-
-
                     },
                     email: {
                         required: "Please enter your email",
                         email: "Please enter a valid email address"
                     }
-                },
-                errorClass: "text-danger",
-                errorPlacement: function (error, element) {
-                    error.insertAfter(element);
                 },
                 errorPlacement: function (error, element) {
                     const msgId = "#msg-" + $(element).attr("name");

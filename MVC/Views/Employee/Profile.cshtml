@@ -2,7 +2,7 @@
     ViewData["Title"] = "Profile";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-
+@section Styles {
 <style>
     :root {
         --primary-color: #133E87;
@@ -99,7 +99,7 @@
         background: #A71D2A;
     }
 </style>
-
+}
 
 <div class="row">
     <!-- Profile Picture Card -->
@@ -254,13 +254,11 @@
                         required: true,
                         minlength: 2,
                         lettersOnly: "Only alphabetic characters are allowed"
-
                     },
                     lastName: {
                         required: true,
                         minlength: 2,
                         lettersOnly: "Only alphabetic characters are allowed"
-
                     },
                     email: {
                         required: true,
@@ -281,7 +279,6 @@
                         email: "Please enter a valid email address"
                     }
                 },
-                   errorClass: "text-danger",
                 errorPlacement: function(error, element) {
                     const msgId = "#msg-" + $(element).attr("name");
                     $(msgId).removeClass('text-success').addClass('text-danger').text(error.text());
