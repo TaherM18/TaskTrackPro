@@ -78,23 +78,11 @@ function loadNotifications() {
         .catch(err => console.error("SignalR connection failed: ", err));
 
     connection.on("ReceiveNotifications", function (notification) {
-        console.log("New Notification Received:", notification);
-        updateNotificationList([notification, ...getExistingNotifications()]);
+        // console.log("New Notification Received:", notification);
+        updateNotificationList(notification);
     });
 }
 
-function getExistingNotifications() {
-    const notificationElements = $("#notificationList .notification-item");
-    return notificationElements.map(function () {
-        return {
-            notificationId: $(this).data("id"),
-            title: $(this).find(".notification-title").text(),
-            description: $(this).find(".notification-desc").text(),
-            createdAt: $(this).find(".notification-time").text(),
-            isRead: $(this).hasClass("unread") ? false : true
-        };
-    }).get();
-}
 
 function markAsRead(notificationId) {
     $.ajax({
@@ -122,41 +110,57 @@ function markAllAsRead() {
     });
 }
 
+let firstLoad = true;
+
 function updateNotificationList(notifications) {
-    console.log("Updating notifications", notifications)
     const notificationList = $("#notificationList");
-    notificationList.empty();
 
     if (!notifications || notifications.length === 0) {
-        notificationList.append(`<div class="p-3 text-center text-muted">No notifications</div>`);
+        notificationList.html(`<div class="p-3 text-center text-muted">No notifications</div>`);
         $("#notificationCount").hide();
         return;
     }
 
+    // ✅ Sort by timestamp (assuming createdAt is a valid Unix timestamp or ISO string)
+    // notifications.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)).reverse();
+    // notifications.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    if (firstLoad) {
+        notificationList.html(""); // Clear existing content only on first load
+    }
+
     notifications.forEach(notification => {
-        const html = `
-            <div class="notification-item ${notification.isRead ? '' : 'unread'}" 
-                 onclick="markAsRead(${notification.notificationId})"
-                 data-id="${notification.notificationId}">
-                <div class="d-flex align-items-center">
-                    <div class="notification-icon ${notification.type.toLowerCase()}">
-                        <i class="fas ${getNotificationIcon(notification.type.toLowerCase())}"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <div class="notification-title">${notification.title}</div>
-                        <div class="notification-desc">${notification.description}</div>
-                        <div class="notification-time">
-                            <i class="far fa-clock"></i> ${formatTimeAgo(notification.createdAt)}
+        // Prevent duplicate notifications from being added
+        if ($(`.notification-item[data-id="${notification.notificationId}"]`).length === 0) {
+            const html = `
+                <div class="notification-item ${notification.isRead ? '' : 'unread'}" 
+                     onclick="markAsRead(${notification.notificationId})"
+                     data-id="${notification.notificationId}">
+                    <div class="d-flex align-items-center">
+                        <div class="notification-icon ${notification.type.toLowerCase()}">
+                            <i class="fas ${getNotificationIcon(notification.type.toLowerCase())}"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="notification-title">${notification.title}</div>
+                            <div class="notification-desc">${notification.description}</div>
+                            <div class="notification-time">
+                                <i class="far fa-clock"></i> ${formatTimeAgo(notification.createdAt)}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        `;
-        notificationList.append(html);
+            `;
+
+            // ✅ Always prepend newest notifications
+            notificationList.prepend(html);
+        }
     });
 
     $("#notificationCount").text(notifications.length).show();
+    firstLoad = false; // Mark first load as complete
 }
+
+
 
 function getNotificationIcon(type) {
     switch (type) {
@@ -187,21 +191,26 @@ function loadUnreadMessages() {
     const user = JSON.parse(sessionStorage.getItem("user"));
     if (!user) return;
 
-    $.ajax({
-        url: `http://localhost:5267/api/chat/unread/${user.userId}`,
-        method: 'GET',
-        success: function (response) {
-            updateMessageList(response.data);
-        },
-        error: function (xhr) {
-            console.error('Error fetching messages:', xhr);
-        }
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl(`http://localhost:5267/chatHub`)// Adjust according to your backend
+        .withAutomaticReconnect()
+        .build();
+
+    connection.start()
+        .then(() => {
+            console.log("Connected to SignalR hub");
+        })
+        .catch(err => console.error("SignalR connection failed: ", err));
+
+    connection.on("ReceiveMessages", function (notification) {
+        // console.log("New Message Received:", notification);
+        updateMessageList(notification);
     });
 }
 
 function updateMessageList(messages) {
     const messageList = $("#messageList");
-    messageList.empty();
+    // messageList.empty();
 
     if (!messages || messages.length === 0) {
         messageList.append(`
@@ -236,7 +245,7 @@ function updateMessageList(messages) {
                 </div>
             </div>
         `;
-        messageList.append(html);
+        messageList.prepend(html);
     });
 
     $("#messageCount").text(messages.length).show();
@@ -275,16 +284,8 @@ function goToChat(senderId) {
 
 $(document).ready(function () {
     loadNotifications()
-        .then(function () {
-            loadUnreadMessages();
-        })
-        .catch(function () {
-            loadUnreadMessages();
-        });
+    loadUnreadMessages();
 
-
-    // Refresh notifications every 30 seconds
-    setInterval(loadNotifications, 30000);
 
     // Handle notification click events
     $(document).on('click', '.notification-item', function () {

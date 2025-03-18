@@ -15,17 +15,21 @@ namespace API.Services
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IHubContext<NotificationHub> _hubContext;
-        private readonly TimeSpan _interval = TimeSpan.FromSeconds(100); // Polling interval
+        private readonly IHubContext<ChatHub> _chatHubContext;
+        private readonly TimeSpan _interval = TimeSpan.FromSeconds(10); // Polling interval
 
-        public NotificationBackgroundService(IServiceScopeFactory scopeFactory, IHubContext<NotificationHub> hubContext)
+        public NotificationBackgroundService(IServiceScopeFactory scopeFactory,
+                                                 IHubContext<NotificationHub> hubContext,
+                                                 IHubContext<ChatHub> chatHubContext)
         {
             _scopeFactory = scopeFactory;
             _hubContext = hubContext;
+            _chatHubContext = chatHubContext;
         }
 
         protected override async System.Threading.Tasks.Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            Console.WriteLine("✅ Notification Background Service Started");
+            Console.WriteLine("✅ Notification & Chat Background Service Started");
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -34,17 +38,22 @@ namespace API.Services
                     using (var scope = _scopeFactory.CreateScope())
                     {
                         var notificationRepo = scope.ServiceProvider.GetRequiredService<INotificationInterface>();
+                        var chatRepo = scope.ServiceProvider.GetRequiredService<IChatInterface>();
 
                         // 🔹 Fetch all unread notifications from the database
                         List<Notification> notifications = await notificationRepo.GetAllUnreadNotifications();
+                        // 🔹 Fetch all unread chat messages from the database
+                        List<Chat> chats = await chatRepo.GetUnreadChatsAll();
 
+                        // 🔥 Send Unread Notifications via SignalR
                         if (notifications.Any())
                         {
                             Console.WriteLine($"🔔 {notifications.Count} unread notifications found!");
 
-                            // 🔹 Group notifications by UserId and send them via SignalR
-                            var groupedNotifications = notifications.GroupBy(n => n.UserId);
+                            var sortedNoti = notifications.OrderBy(n => n.CreatedAt);
 
+                            // Group notifications by UserId and send them
+                            var groupedNotifications = sortedNoti.GroupBy(n => n.UserId);
                             foreach (var group in groupedNotifications)
                             {
                                 string userId = group.Key.ToString();
@@ -52,29 +61,49 @@ namespace API.Services
 
                                 Console.WriteLine($"📢 Sending {userNotifications.Count} notifications to User {userId}");
 
-                                // 🔹 Send notifications to the specific user
-                                await _hubContext.Clients.All.SendAsync("ReceiveNotifications", notifications);
-
-                                // ✅ Optionally mark notifications as sent (update the DB)
-                                // await notificationRepo.MarkNotificationsAsSent(userNotifications);
+                                // 🔹 Send notifications only to the specific user
+                                await _hubContext.Clients.All.SendAsync("ReceiveNotifications", userNotifications);
                             }
                         }
                         else
                         {
                             Console.WriteLine("⏳ No new unread notifications...");
                         }
+
+                        // 🔥 Send Unread Chat Messages via SignalR
+                        if (chats.Any())
+                        {
+                            Console.WriteLine($"💬 {chats.Count} unread chat messages found!");
+
+                            // Group messages by ReceiverId (UserId)
+                            var groupedChats = chats.GroupBy(c => c.ReceiverId);
+                            foreach (var group in groupedChats)
+                            {
+                                string receiverId = group.Key.ToString();
+                                var userChats = group.ToList();
+
+                                Console.WriteLine($"📨 Sending {userChats.Count} messages to User {receiverId}");
+
+                                // 🔹 Send chat messages only to the intended recipient
+                                await _chatHubContext.Clients.All.SendAsync("ReceiveMessages", userChats);
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("⏳ No new unread messages...");
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Error in NotificationBackgroundService: {ex.Message}");
+                    Console.WriteLine($"❌ Error in NotificationChatBackgroundService: {ex.Message}");
                 }
 
                 // 🔹 Wait before fetching again (polling interval)
                 await System.Threading.Tasks.Task.Delay(_interval, stoppingToken);
             }
 
-            Console.WriteLine("⚠ Notification Background Service Stopped");
+            Console.WriteLine("⚠ Notification & Chat Background Service Stopped");
         }
     }
 }
