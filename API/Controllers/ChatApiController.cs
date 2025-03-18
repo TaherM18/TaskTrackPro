@@ -20,29 +20,29 @@ namespace API.Controllers
 
 
         #region SaveChat
-        [HttpPost]
-        public async Task<IActionResult> SaveChat([FromForm] Chat chat)
+       [HttpPost]
+public async Task<IActionResult> SaveChat([FromForm] Chat chat)
+{
+    var chatId = await _chat.SaveChat(chat);
+    if (chatId > 0)
+    {
+        // Ensure queue exists and publish message to RabbitMQ with delivery status
+        await _rabbitMqService.EnsureQueueExists("chat_messages");
+        await _rabbitMqService.PublishMessage("chat_messages", new
         {
-            var chatId = await _chat.SaveChat(chat);
-            if (chatId > 0)
-            {
-                // Ensure queue exists and publish message to RabbitMQ with delivery status
-                await _rabbitMqService.EnsureQueueExists("chat_messages");
-                await _rabbitMqService.PublishMessage("chat_messages", new
-                {
-                    chatId,
-                    chat.Message,
-                    chat.SenderId,
-                    chat.ReceiverId,
-                    Timestamp = DateTime.UtcNow,
-                    Status = "sent"
-                });
-                
-                return Ok(new { chatId, status = "sent" });
-            }
-            
-            return BadRequest(new { message = "Failed to save chat" });
-        }
+            chatId,
+            chat.Message,
+            chat.SenderId,
+            chat.ReceiverId,
+            Timestamp = DateTime.UtcNow,
+            Status = "sent"
+        });
+        
+        return Ok(new { chatId, status = "sent" });
+    }
+    
+    return BadRequest(new { message = "Failed to save chat" });
+}
         #endregion
 
 
