@@ -2,6 +2,8 @@ using API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Repositories.Interfaces;
 using Repositories.Models;
+using Microsoft.AspNetCore.SignalR;
+
 
 namespace API.Controllers
 {
@@ -11,9 +13,11 @@ namespace API.Controllers
     {
         private readonly IChatInterface _chat;
         private readonly RabbitMqService _rabbitMqService;
+        private readonly IHubContext<ChatHub> _hubContext;
 
-        public ChatApiController(IChatInterface chat, RabbitMqService rabbitMqService)
+        public ChatApiController(IChatInterface chat, RabbitMqService rabbitMqService, IHubContext<ChatHub> hubContext)
         {
+            _hubContext = hubContext;
             _chat = chat;
             _rabbitMqService = rabbitMqService;
         }
@@ -37,7 +41,7 @@ namespace API.Controllers
                     Timestamp = DateTime.UtcNow,
                     Status = "sent"
                 });
-
+                await _hubContext.Clients.All.SendAsync("ReceiveMessage", chat);
                 return Ok(new { chatId, status = "sent" });
             }
 

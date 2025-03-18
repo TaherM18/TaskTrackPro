@@ -21,6 +21,7 @@ namespace API.Services
         public override async System.Threading.Tasks.Task OnConnectedAsync()
         {
             var userId = Context.GetHttpContext()?.Request.Query["userId"].ToString();
+            // Console.WriteLine($"User {userId} connected with Connection ID: {Context.ConnectionId}");
             if (!string.IsNullOrEmpty(userId))
             {
                 var db = _redis.GetDatabase();
@@ -89,7 +90,11 @@ namespace API.Services
                 if (isReceiverOnline)
                 {
                     // Send directly to the user's connection if online
-                    await Clients.Client(connectionId).SendAsync("ReceiveMessage", message);
+                    // await Clients.Client(connectionId).SendAsync("ReceiveMessage", message);
+                    // await Clients.All.SendAsync("ReceiveMessage", message);
+                    await Clients.User(receiverId).SendAsync("ReceiveMessage", message);
+
+
                     
                     // Update the sender with the delivery status
                     await Clients.User(message.SenderId.ToString()).SendAsync("MessageStatus", message.ChatId, "delivered");
@@ -126,6 +131,13 @@ namespace API.Services
             {
                 Console.WriteLine($"Error acknowledging message: {ex.Message}");
             }
+        }
+
+        private async System.Threading.Tasks.Task BroadcastOnlineUsers()
+        {
+            var db = _redis.GetDatabase();
+            var onlineUsers = (await db.HashGetAllAsync("UserStatus")).Where(u => u.Value == "online").Select(u => u.Name.ToString()).ToList();
+            await Clients.All.SendAsync("ReceiveOnlineUser", onlineUsers);
         }
     }
 }

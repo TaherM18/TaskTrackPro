@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Repositories.Interfaces;
 using Repositories.Models;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,15 +17,15 @@ namespace API.Services
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IHubContext<NotificationHub> _hubContext;
         private readonly IHubContext<ChatHub> _chatHubContext;
-        private readonly TimeSpan _interval = TimeSpan.FromSeconds(10); // Polling interval
+        private readonly IConnectionMultiplexer _redis;
+        private readonly TimeSpan _interval = TimeSpan.FromSeconds(10);
 
-        public NotificationBackgroundService(IServiceScopeFactory scopeFactory,
-                                                 IHubContext<NotificationHub> hubContext,
-                                                 IHubContext<ChatHub> chatHubContext)
+        public NotificationBackgroundService(IServiceScopeFactory scopeFactory, IHubContext<NotificationHub> hubContext, IHubContext<ChatHub> chatHubContext, IConnectionMultiplexer redis)
         {
             _scopeFactory = scopeFactory;
             _hubContext = hubContext;
             _chatHubContext = chatHubContext;
+            _redis = redis;
         }
 
         protected override async System.Threading.Tasks.Task ExecuteAsync(CancellationToken stoppingToken)
@@ -33,6 +34,22 @@ namespace API.Services
 
             while (!stoppingToken.IsCancellationRequested)
             {
+
+                try
+                {
+                    var db = _redis.GetDatabase();
+                    var onlineUsers = (await db.HashGetAllAsync("UserStatus")).Where(u => u.Value == "online").Select(u => u.Name.ToString()).ToList();
+
+                     if (onlineUsers.Any())
+                    {
+                        Console.WriteLine("📌 Current Online Users: " + string.Join(", ", onlineUsers));
+                        await _chatHubContext.Clients.All.SendAsync("ReceiveOnlineUser", onlineUsers);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Error in NotificationBackgroundService: {ex.Message}");
+                }  
                 try
                 {
                     using (var scope = _scopeFactory.CreateScope())
@@ -75,9 +92,8 @@ namespace API.Services
                         {
                             Console.WriteLine($"💬 {chats.Count} unread chat messages found!");
 
-                            var sortedChats = chats.OrderBy(n => n.Timestamp);
                             // Group messages by ReceiverId (UserId)
-                            var groupedChats = sortedChats.GroupBy(c => c.ReceiverId);
+                            var groupedChats = chats.GroupBy(c => c.ReceiverId);
                             foreach (var group in groupedChats)
                             {
                                 string receiverId = group.Key.ToString();
