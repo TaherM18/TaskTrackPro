@@ -255,14 +255,12 @@
     // DOCUMENT READY FUNCTION
 
     $(document).ready(function () {
-        setTimeout(function() {
-            loadReceiverData()
-            .then(() => {
-                loadChatHistory();
-                // Call the new connection setup function
-                startSignalRConnection();
-            });
-        }, 2000);
+        loadReceiverData()
+        .then(() => {
+            loadChatHistory();
+            // Call the new connection setup function
+            startSignalRConnection();
+        });
 
         $("#chatForm").on("submit", function (e) {
             e.preventDefault();

@@ -1,5 +1,6 @@
 @{
     ViewData["Title"] = "Tasks";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div id="alert"></div>
@@ -113,8 +114,7 @@
 
     <script>
         const user = JSON.parse(sessionStorage.getItem("user"));
-        const baseUrl = `http://localhost:5267/api/task`;
-        const userUrl = "http://localhost:5267/api/user"; 
+        const baseUrl = `http://localhost:5267/api`;
 
         // function to load employees
         function loadEmployeeData() {
@@ -232,7 +232,7 @@
             $("#btnSearch").prop("disabled", true).html(`<i class="fas fa-search me-2"></i>Searching...`);
 
             $.ajax({
-                url: `${baseUrl}/search/${query}`,
+                url: `${baseUrl}/task/search/${query}`,
                 type: 'GET',
                 dataType: 'json',
                 success: function (response) {
@@ -356,7 +356,7 @@
         function saveTask() {
             const taskId = $('#btnSaveTask').data('id');
             const method = taskId ? 'PUT' : 'POST';
-            const url = baseUrl;
+            const url = `${baseUrl}/task`;
             
             // Create a task object that matches your API's expected format
             const taskData = {
@@ -512,7 +512,7 @@
             $(document).on('click', '.btn-edit', function() {
                 const taskId = $(this).data('id');
                 $.ajax({
-                    url: `${baseUrl}/${taskId}`,
+                    url: `${baseUrl}/task/${taskId}`,
                     type: 'GET',
                     success: function(response) {
                         if (response.success && response.data) {
@@ -549,7 +549,7 @@
                 const taskId = $(this).data('id');
                 if (confirm('Are you sure you want to delete this task?')) {
                     $.ajax({
-                        url: `${baseUrl}/${taskId}`,
+                        url: `${baseUrl}/task/${taskId}`,
                         type: 'DELETE',
                         success: function(response) {
                             $('#alert').removeClass().addClass('alert alert-success')

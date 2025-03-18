@@ -1,5 +1,6 @@
 @{
     ViewData["Title"] = "Chats";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="row mt-4">
@@ -41,9 +42,7 @@
         //
 
         $(document).ready(function() {
-            setTimeout(function() {
-                loadUsers();
-            }, 1500);
+            loadUsers();
         });
     </script>
 }

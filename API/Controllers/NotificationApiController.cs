@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Repositories.Interfaces;
 using Repositories.Models;
+using Microsoft.AspNetCore.SignalR;
 
 namespace API.Controllers
 {
@@ -9,10 +10,13 @@ namespace API.Controllers
     public class NotificationApiController : ControllerBase
     {
         private readonly INotificationInterface _notification;
+        private readonly IHubContext<NotificationHub> _hubContext;
 
-        public NotificationApiController(INotificationInterface notification)
+        public NotificationApiController(INotificationInterface notification, IHubContext<NotificationHub> hubContext)
         {
             _notification = notification;
+            _hubContext = hubContext;
+
         }
 
 
@@ -71,10 +75,19 @@ namespace API.Controllers
             {
                 return StatusCode(500, new { message = "Failed to create notification" });
             }
-            return Ok(new { 
+            return Ok(new
+            {
                 message = "Notification created successfully",
                 notificationId
             });
+        }
+
+        [HttpPost("send-notification/{userId}")]
+        public async Task<IActionResult> SendNotification(string userId, [FromBody] Notification notification)
+        {
+            System.Console.WriteLine("IN notification api :: " + userId);
+            await _hubContext.Clients.All.SendAsync("ReceiveNotification", notification);
+            return Ok(new { message = "Notification sent!" });
         }
 
     }
