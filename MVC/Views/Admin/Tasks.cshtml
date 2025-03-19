@@ -189,8 +189,7 @@
 
 @section Scripts {
     <script>
-        const baseUrl = "http://localhost:5267/api/task";
-        const userUrl = "http://localhost:5267/api/user";
+        const baseUrl = "http://localhost:5267/api";
         let user=JSON.parse(sessionStorage.getItem("user"));
 
         // ========
@@ -198,7 +197,7 @@
         // function to load employees
         function loadEmployees() {
             $.ajax({
-                url: userUrl,
+                url: `${userUrl}/user`,
                 type: 'GET',
                 dataType: 'json',
                 success: function(response) {
@@ -226,7 +225,7 @@
         // function to load tasks
         function loadTaskData() {
             $.ajax({
-                url: baseUrl,
+                url: `${baseUrl}/task`,
                 type: 'GET',
                 dataType: 'json',
                 success: function (response) {
@@ -293,7 +292,7 @@
                                                                 <button class="btn btn-outline-primary btn-edit" data-id="${task.taskId}">
                                                                     <i class="fas fa-edit"></i>
                                                                 </button>
-                                                                <button class="btn btn-outline-danger btn-delete" data-id="${task.taskId}">
+                                                                <button class="btn btn-outline-danger btn-delete" data-id="${task.taskId}" data-title="${task.title}" data-userid="${task.user.userId}">
                                                                     <i class="fas fa-trash"></i>
                                                                 </button>
                                                             </div>
@@ -327,7 +326,7 @@
             $("#btnSearch").prop("disabled", true).html(`<i class="fas fa-search me-2"></i>Searching...`);
 
             $.ajax({
-                url: `${baseUrl}/search/${query}`,
+                url: `${baseUrl}task/search/${query}`,
                 type: 'GET',
                 dataType: 'json',
                 success: function (response) {
@@ -396,7 +395,7 @@
                                                                 <button class="btn btn-outline-primary btn-edit" data-id="${task.taskId}">
                                                                     <i class="fas fa-edit"></i>
                                                                 </button>
-                                                                <button class="btn btn-outline-danger btn-delete" data-id="${task.taskId}">
+                                                                <button class="btn btn-outline-danger btn-delete" data-id="${task.taskId}" data-title="${task.title}" data-userid="${task.user.userId}">
                                                                     <i class="fas fa-trash"></i>
                                                                 </button>
                                                             </div>
@@ -488,7 +487,6 @@
         function saveTask() {
             const taskId = $('#btnSaveTask').data('id');
             const method = taskId ? 'PUT' : 'POST';
-            const url = baseUrl;
             
             // Create a task object that matches your API's expected format
             const taskData = {
@@ -523,16 +521,30 @@
             }
 
             $.ajax({
-                url: url,
+                url: `${baseUrl}/task`,
                 type: method,
                 contentType: 'application/json',
                 data: JSON.stringify(taskData),
                 success: function(response) {
-                    $('#taskModal').modal('hide');
-                    $('#alert').removeClass().addClass('alert alert-success')
-                        .text(taskId ? 'Task updated successfully!' : 'Task added successfully!');
-                    loadTaskData();
-                    $('#taskForm').removeClass('was-validated');
+                    const fullName = `${user.firstName} ${user.lastName}`;
+                    //
+                    sendUserNotification(
+                        taskData.userId,
+                        method == "POST" ? "New Task Assigned" : "Task Updated",
+                        method == "POST" ? `${fullName} assigned you a new task: ${taskData.title}.` : `${fullName} updated your task: ${taskData.title}.`,
+                        "task"
+                    ).finally(() => {
+                        // Show success message regardless of notification status
+                        Swal.fire({
+                            title: method == "POST" ? "New Task Added" : "Task Updated",
+                            icon: "success",
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        $('#taskModal').modal('hide');
+                        loadTaskData();
+                        $('#taskForm').removeClass('was-validated');
+                    });
                 },
                 error: function(error) {
                     console.error('Error saving task:', error);
@@ -590,7 +602,7 @@
             $(document).on('click', '.btn-edit', function() {
                 const taskId = $(this).data('id');
                 $.ajax({
-                    url: `${baseUrl}/${taskId}`,
+                    url: `${baseUrl}/task/${taskId}`,
                     type: 'GET',
                     success: function(response) {
                         if (response.data) {
@@ -624,22 +636,50 @@
             // Delete Task
             $(document).on('click', '.btn-delete', function() {
                 const taskId = $(this).data('id');
-                if (confirm('Are you sure you want to delete this task?')) {
-                    $.ajax({
-                        url: `${baseUrl}/${taskId}`,
-                        type: 'DELETE',
-                        success: function(response) {
-                            $('#alert').removeClass().addClass('alert alert-success')
-                                .text('Task deleted successfully!');
-                            loadTaskData();
-                        },
-                        error: function(error) {
-                            console.error('Error deleting task:', error);
-                            $('#alert').removeClass().addClass('alert alert-danger')
-                                .text('Error deleting task');
-                        }
-                    });
-                }
+                const taskTitle = $(this).data('title');
+                const taskUserId = $(this).data('userid');
+
+                Swal.fire({
+                    title: "Are you sure you want to delete this task?",
+                    text: taskTitle,
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#133E87",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, delete it!"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: `${baseUrl}/task/${taskId}`,
+                            type: 'DELETE',
+                            success: function(response) {
+                                const fullName = `${user.firstName} ${user.lastName}`;
+                                //
+                                sendUserNotification(
+                                    taskUserId,
+                                    "Task Deleted",
+                                    `${fullName} deleted your task: ${taskTitle}.`,
+                                ).finally(() => {
+                                    Swal.fire({
+                                        title: "Task Deleted",
+                                        icon: "success",
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    });
+                                    loadTaskData();
+                                });
+                            },
+                            error: function(error) {
+                                console.error('Error deleting task:', error);
+                                $('#alert').removeClass().addClass('alert alert-danger')
+                                    .text('Error deleting task').show();
+                                setTimeout(function() {
+                                    $('#alert').hide();
+                                }, 2000);
+                            }
+                        });
+                    }
+                });
             });
 
             // Event Listeners for Start and End Date Changes

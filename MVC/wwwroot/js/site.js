@@ -124,7 +124,11 @@ let firstLoad = true;
 
 function updateNotificationList(notifications) {
     const notificationList = $("#notificationList");
+    const user = JSON.parse(sessionStorage.getItem("user"));
 
+    notifications = notifications.filter(s => s.userId == user.userId);
+
+    console.log("notifications:\n", notifications);
     if (!notifications || notifications.length === 0) {
         notificationList.html(`<div class="p-3 text-center text-muted">No notifications</div>`);
         $("#notificationCount").hide();
@@ -194,6 +198,47 @@ function formatTimeAgo(date) {
     return 'Just now';
 }
 
+// function to send admin notification
+function sendAdminNotification(title, description, type = "alert") {
+    return new Promise((resolve, reject) => {
+        const notification = {
+            userId: "9d5c1ce8-e30e-4861-b144-61212b455b40", // Admin's userId
+            title: title,
+            description: description,
+            type: type
+        };
+
+        $.ajax({
+            url: 'http://localhost:5267/api/notification',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(notification),
+            success: resolve,
+            error: reject
+        });
+    });
+}
+
+// function to send user notification
+function sendUserNotification(userId, title, description, type = "alert") {
+    return new Promise((resolve, reject) => {
+        const notification = {
+            userId: userId,
+            title: title,
+            description: description,
+            type: type
+        };
+
+        $.ajax({
+            url: 'http://localhost:5267/api/notification',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(notification),
+            success: resolve,
+            error: reject
+        });
+    });
+}
 
 // CHAT MESSAGES ==========================================================
 
@@ -240,7 +285,7 @@ function updateMessageList(messages) {
     }
 
     if (firstLoad) {
-        notificationList.html(""); // Clear existing content only on first load
+        messageList.html(""); // Clear existing content only on first load
     }
 
     messages.forEach(msg => {
